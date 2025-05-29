@@ -1,27 +1,34 @@
-# youtube_uploader.py
+import os
 from googleapiclient.discovery import build
+from googleapiclient.http import MediaFileUpload
 from google_auth_oauthlib.flow import InstalledAppFlow
+from pathlib import Path
 
-GOOGLE_SECRET = os.getenv("GOOGLE_CLIENT_SECRET_JSON", "client_secret.json")
-yt = youtube_service(GOOGLE_SECRET)
+SCOPES = ["https://www.googleapis.com/auth/youtube.upload"]
+TOKEN_CACHE = "token.json"
 
-
-def youtube_service(secret_json):
-    flow = InstalledAppFlow.from_client_secrets_file(secret_json,
-            scopes=["https://www.googleapis.com/auth/youtube.upload"])
+def youtube_service(secret_json="client_secret.json"):
+    flow = InstalledAppFlow.from_client_secrets_file(secret_json, scopes=SCOPES)
     creds = flow.run_local_server(port=0)
-    return build("youtube","v3",credentials=creds)
+    return build("youtube", "v3", credentials=creds)
 
-def upload(path, title, description, is_short=True):
-    yt = youtube_service("client_secret.json")
+def upload(video_path: str, title: str, description: str, tags=None,
+           secret_json="client_secret.json"):
+    tags = tags or ["podcast", "cortes", "clipverso"]
+    yt = youtube_service(secret_json)
     body = {
-        "snippet":{
+        "snippet": {
             "title": title,
             "description": description,
-            "tags":["podcast","cortes","humor"]
+            "tags": tags
         },
-        "status":{"privacyStatus":"public"}
+        "status": {"privacyStatus": "public"}
     }
-    media = MediaFileUpload(path, chunksize=-1, resumable=True, mimetype="video/*")
-    yt.videos().insert(part="snippet,status", body=body,
-                       media_body=media).execute()
+    media = MediaFileUpload(video_path, chunksize=-1, resumable=True)
+    request = yt.videos().insert(part="snippet,status",
+                                 body=body,
+                                 media_body=media)
+    response = None
+    while response is None:
+        status, response = request.next_chunk()
+    return response.get("id")

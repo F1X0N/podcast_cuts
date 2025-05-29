@@ -1,0 +1,6 @@
+paths:
+  raw: raw
+  clips: clips
+whisper_size: base        # tiny / base / small / medium
+highlights: 3             # nº de cortes por episódio
+tags: ["podcast", "cortes", "clipverso"]

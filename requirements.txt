@@ -1,0 +1,9 @@
+yt-dlp
+moviepy
+faster-whisper
+openai
+python-dotenv
+google-api-python-client
+google-auth-oauthlib
+requests
+PyYAML
