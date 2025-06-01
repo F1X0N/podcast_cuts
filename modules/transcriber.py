@@ -8,7 +8,11 @@ def transcribe(video_path: str, model_size: str = "base"):
     """
     global _model
     if _model is None:
-        _model = WhisperModel(model_size, device="cuda" if model_size != "tiny" else "cpu",
-                              compute_type="float16" if model_size != "tiny" else "int8")
+        # Usando CPU com otimizações
+        _model = WhisperModel(model_size, 
+                            device="cpu",
+                            compute_type="int8",
+                            cpu_threads=8,  # Aumenta o número de threads
+                            num_workers=4)  # Usa múltiplos workers
     segments, _ = _model.transcribe(video_path)
     return [{"start": s.start, "end": s.end, "text": s.text} for s in segments]
