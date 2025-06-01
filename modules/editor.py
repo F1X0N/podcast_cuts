@@ -45,7 +45,7 @@ def make_clip(video_path: str, highlight: dict, transcript: list,
     min_duration = 60  # 1 minuto
     if end - start < min_duration:
         end = min(start + min_duration, video_duration)
-
+    
     # Recorta o trecho
     clip = clip.subclip(start, end)
     
@@ -98,7 +98,7 @@ def make_clip(video_path: str, highlight: dict, transcript: list,
     if faixa: elementos.append(faixa)
     elementos += legendas
     final = mp.CompositeVideoClip(elementos)
-
+    
     # Salva o arquivo com nome seguro
     safe_hook = sanitize_filename(highlight['hook'])
     outfile = Path(out_dir) / f"{safe_hook}.mp4"
