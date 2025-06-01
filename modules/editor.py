@@ -60,12 +60,12 @@ def clear_checkpoint(out_dir: str):
         checkpoint_path.unlink()
         print("Checkpoint removido")
 
-def segment_text(text: str, max_chars: int = 50) -> list:
+def segment_text(text: str, max_chars: int = 20) -> list:
     """
-    Segmenta o texto em partes menores respeitando pontuação e pausas naturais.
+    Segmenta o texto em partes menores, garantindo uma linha por legenda.
     """
     # Pontuações que indicam pausa natural
-    pausas = ['.', '!', '?', ':', ';', ',']
+    pausas = ['.', '!', '?', ':', ';', ',', '...']
     
     # Se o texto já é curto, retorna como está
     if len(text) <= max_chars:
@@ -109,6 +109,91 @@ def segment_text(text: str, max_chars: int = 50) -> list:
         segmentos.append(' '.join(segmento_atual))
     
     return segmentos
+
+def create_animated_text(text: str, duration: float, font_path: str, fontsize: int, width: int, 
+                        position: tuple) -> mp.TextClip:
+    """
+    Cria um TextClip com animações básicas.
+    """
+    # Cria o clip base com o texto
+    clip = mp.TextClip(text,
+        fontsize=fontsize,
+        font=font_path,
+        color="white",
+        stroke_color="black",
+        stroke_width=2,
+        method="caption",
+        size=(width-80, None))
+    
+    # Define a duração total
+    clip = clip.set_duration(duration)
+    
+    # Adiciona um pequeno fade in/out
+    clip = clip.crossfadein(0.1).crossfadeout(0.1)
+    
+    # Posiciona o clip
+    return clip.set_position(position)
+
+def create_typing_effect(text: str, duration: float, font_path: str, fontsize: int, width: int,
+                        position: tuple, typing_speed: float = 0.03) -> mp.TextClip:
+    """
+    Cria um TextClip com efeito de digitação.
+    """
+    # Calcula quantos caracteres devem aparecer por frame
+    chars_per_second = 1 / typing_speed
+    total_chars = len(text)
+    
+    def make_frame(t):
+        # Calcula quantos caracteres devem estar visíveis
+        visible_chars = min(int(t * chars_per_second), total_chars)
+        return text[:visible_chars]
+    
+    # Cria o clip base
+    base_clip = mp.TextClip(make_frame,
+        fontsize=fontsize,
+        font=font_path,
+        color="white",
+        stroke_color="black",
+        stroke_width=2,
+        method="caption",
+        size=(width-80, None))
+    
+    # Define a duração total
+    base_clip = base_clip.set_duration(duration)
+    
+    # Posiciona o clip
+    return base_clip.set_position(position)
+
+def highlight_keywords(text: str) -> str:
+    """
+    Destaca palavras importantes no texto usando cores diferentes.
+    """
+    # Lista de palavras-chave para destacar (pode ser expandida)
+    keywords = [
+        "importante", "crucial", "essencial", "principal",
+        "incrível", "fantástico", "surpreendente", "extraordinário",
+        "nunca", "sempre", "jamais", "definitivamente"
+    ]
+    
+    # Cores para destacar (em formato hex)
+    colors = ["#FFD700", "#FF69B4", "#00FF00", "#FF4500"]
+    
+    # Divide o texto em palavras
+    words = text.split()
+    highlighted_words = []
+    
+    for word in words:
+        # Remove pontuação para comparação
+        clean_word = word.strip('.,!?;:')
+        if clean_word.lower() in keywords:
+            # Escolhe uma cor aleatória
+            color = colors[len(highlighted_words) % len(colors)]
+            # Adiciona a palavra com a cor
+            highlighted_words.append(f'<color={color}>{word}</color>')
+        else:
+            highlighted_words.append(word)
+    
+    return ' '.join(highlighted_words)
 
 def make_clip(video_path: str, highlight: dict, transcript: list,
               out_dir: str = "clips") -> Path:
@@ -185,31 +270,46 @@ def make_clip(video_path: str, highlight: dict, transcript: list,
         print(f"Processando segmento {i}: {seg_start:.2f}s -> {seg_end:.2f}s")
         
         # Segmenta o texto em partes menores
-        segmentos = segment_text(txt)
-        duracao_segmento = (seg_end - seg_start) / len(segmentos)
+        segmentos = segment_text(txt, max_chars=20)  # Reduzido para garantir uma linha
+        
+        # Calcula a duração total do segmento de áudio
+        duracao_total = seg_end - seg_start
+        
+        # Calcula a duração de cada subsegmento baseado no número de caracteres
+        total_chars = sum(len(s) for s in segmentos)
+        duracao_base = duracao_total / total_chars
         
         for j, segmento in enumerate(segmentos):
+            # Calcula a duração proporcional ao tamanho do texto
+            duracao_segmento = (len(segmento) * duracao_base) * 1.2  # 20% extra para pausas naturais
+            
             # Calcula o tempo de início e fim para cada subsegmento
-            subseg_start = seg_start + (j * duracao_segmento)
+            if j == 0:
+                subseg_start = seg_start
+            else:
+                # Usa o fim do segmento anterior como início do atual
+                subseg_start = seg_start + sum(len(s) * duracao_base * 1.2 for s in segmentos[:j])
+            
             subseg_end = subseg_start + duracao_segmento
             
-            # Legenda estilizada
+            # Destaca palavras importantes
+            segmento_destacado = highlight_keywords(segmento)
+            
             try:
-                legenda = mp.TextClip(segmento, 
-                    fontsize=fontsize, 
-                    font=font_path, 
-                    color="white",
-                    stroke_color="black", 
-                    stroke_width=2, 
-                    method="caption", 
-                    size=(width-80, None))
-                    
-                # Define a duração do TextClip antes de posicionar
-                legenda = legenda.set_duration(duracao_segmento)
-                legenda = legenda.set_start(subseg_start) \
-                    .set_position(("center", height - fontsize - margin_bottom))
-                    
-                print(f"Legenda criada: {segmento[:50]}...")
+                # Cria a legenda
+                legenda = create_animated_text(
+                    segmento_destacado,
+                    duracao_segmento,
+                    font_path,
+                    fontsize,
+                    width,
+                    ("center", height - fontsize - margin_bottom)
+                )
+                
+                # Define o tempo de início com offset negativo de 0.3s
+                legenda = legenda.set_start(max(0, subseg_start - 0.3))
+                
+                print(f"Legenda criada: {segmento[:50]}... (Duração: {duracao_segmento:.2f}s)")
                 legendas.append(legenda)
             except Exception as e:
                 print(f"Erro ao criar legenda: {segmento[:50]}... | Erro: {e}")

@@ -346,3 +346,219 @@
   total_brl: 0.247175
   total_usd: 0.049435
   usd_brl: 5.0
+- data: '2025-06-01 12:16:17'
+  episodio: https://www.youtube.com/watch?v=udilUEZZ17s
+  etapas:
+    highlighter:
+      cache: 0
+      calls: 1
+      input: 1794
+      output: 32
+      usd: 0.00945
+    thumbnail:
+      cache: 0
+      calls: 1
+      input: 0
+      output: 0
+      usd: 0.04
+  total_brl: 0.24725
+  total_usd: 0.04945
+  usd_brl: 5.0
+- data: '2025-06-01 12:19:51'
+  episodio: https://www.youtube.com/watch?v=udilUEZZ17s
+  etapas:
+    highlighter:
+      cache: 0
+      calls: 1
+      input: 1816
+      output: 35
+      usd: 0.009605
+    thumbnail:
+      cache: 0
+      calls: 1
+      input: 0
+      output: 0
+      usd: 0.04
+  total_brl: 0.24802500000000002
+  total_usd: 0.049605
+  usd_brl: 5.0
+- data: '2025-06-01 12:24:19'
+  episodio: https://www.youtube.com/watch?v=udilUEZZ17s
+  etapas:
+    highlighter:
+      cache: 0
+      calls: 1
+      input: 1804
+      output: 37
+      usd: 0.009575
+    thumbnail:
+      cache: 0
+      calls: 1
+      input: 0
+      output: 0
+      usd: 0.04
+  total_brl: 0.247875
+  total_usd: 0.049575
+  usd_brl: 5.0
+- data: '2025-06-01 12:40:50'
+  episodio: https://www.youtube.com/watch?v=udilUEZZ17s
+  etapas:
+    highlighter:
+      cache: 0
+      calls: 1
+      input: 1794
+      output: 35
+      usd: 0.009495
+    thumbnail:
+      cache: 0
+      calls: 1
+      input: 0
+      output: 0
+      usd: 0.04
+  total_brl: 0.247475
+  total_usd: 0.049495
+  usd_brl: 5.0
+- data: '2025-06-01 12:57:35'
+  episodio: https://www.youtube.com/watch?v=udilUEZZ17s
+  etapas:
+    highlighter:
+      cache: 0
+      calls: 1
+      input: 1822
+      output: 30
+      usd: 0.00956
+    thumbnail:
+      cache: 0
+      calls: 1
+      input: 0
+      output: 0
+      usd: 0.04
+  total_brl: 0.2478
+  total_usd: 0.04956
+  usd_brl: 5.0
+- data: '2025-06-01 13:02:43'
+  episodio: https://www.youtube.com/watch?v=udilUEZZ17s
+  etapas:
+    highlighter:
+      cache: 0
+      calls: 1
+      input: 1798
+      output: 40
+      usd: 0.009590000000000001
+    thumbnail:
+      cache: 0
+      calls: 1
+      input: 0
+      output: 0
+      usd: 0.04
+  total_brl: 0.24795
+  total_usd: 0.04959
+  usd_brl: 5.0
+- data: '2025-06-01 13:11:40'
+  episodio: https://www.youtube.com/watch?v=udilUEZZ17s
+  etapas:
+    highlighter:
+      cache: 0
+      calls: 1
+      input: 1819
+      output: 33
+      usd: 0.009590000000000001
+    thumbnail:
+      cache: 0
+      calls: 1
+      input: 0
+      output: 0
+      usd: 0.04
+  total_brl: 0.24795
+  total_usd: 0.04959
+  usd_brl: 5.0
+- data: '2025-06-01 13:22:55'
+  episodio: https://www.youtube.com/watch?v=udilUEZZ17s
+  etapas:
+    highlighter:
+      cache: 0
+      calls: 1
+      input: 1804
+      output: 29
+      usd: 0.009455
+    thumbnail:
+      cache: 0
+      calls: 1
+      input: 0
+      output: 0
+      usd: 0.04
+  total_brl: 0.247275
+  total_usd: 0.049455
+  usd_brl: 5.0
+- data: '2025-06-01 13:28:37'
+  episodio: https://www.youtube.com/watch?v=udilUEZZ17s
+  etapas:
+    highlighter:
+      cache: 0
+      calls: 1
+      input: 1800
+      output: 28
+      usd: 0.009420000000000001
+    thumbnail:
+      cache: 0
+      calls: 1
+      input: 0
+      output: 0
+      usd: 0.04
+  total_brl: 0.24710000000000004
+  total_usd: 0.049420000000000006
+  usd_brl: 5.0
+- data: '2025-06-01 13:35:24'
+  episodio: https://www.youtube.com/watch?v=udilUEZZ17s
+  etapas:
+    highlighter:
+      cache: 0
+      calls: 1
+      input: 1804
+      output: 35
+      usd: 0.009545
+    thumbnail:
+      cache: 0
+      calls: 1
+      input: 0
+      output: 0
+      usd: 0.04
+  total_brl: 0.247725
+  total_usd: 0.049545
+  usd_brl: 5.0
+- data: '2025-06-01 13:42:09'
+  episodio: https://www.youtube.com/watch?v=udilUEZZ17s
+  etapas:
+    highlighter:
+      cache: 0
+      calls: 1
+      input: 1795
+      output: 31
+      usd: 0.00944
+    thumbnail:
+      cache: 0
+      calls: 1
+      input: 0
+      output: 0
+      usd: 0.04
+  total_brl: 0.24719999999999998
+  total_usd: 0.04944
+  usd_brl: 5.0
+- data: '2025-06-01 13:49:33'
+  episodio: https://www.youtube.com/watch?v=udilUEZZ17s
+  etapas:
+    highlighter:
+      cache: 0
+      calls: 1
+      input: 1798
+      output: 31
+      usd: 0.009455000000000002
+    thumbnail:
+      cache: 0
+      calls: 1
+      input: 0
+      output: 0
+      usd: 0.04
+  total_brl: 0.247275
+  total_usd: 0.049455
+  usd_brl: 5.0
