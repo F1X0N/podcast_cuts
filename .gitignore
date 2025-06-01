@@ -1,6 +1,23 @@
+# Arquivos de ambiente e credenciais
 .env
 client_secret.json
+
+# Ambiente virtual
 venv/
+
+# Cache Python
 __pycache__/
+*.py[cod]
+*$py.class
+
+# Pastas de mídia
 raw/
 clips/
+
+# Logs
+logs/
+*.log
+
+# Arquivos do sistema
+.DS_Store
+Thumbs.db
