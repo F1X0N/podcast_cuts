@@ -5,8 +5,9 @@ from modules.llm_utils import call_llm, save_error_log
 load_dotenv()
 
 SYSTEM_MSG = (
-    "Você é um editor de cortes. Receberá a transcrição numerada de um episódio "
-    "e deve escolher os melhores trechos virais para Shorts, devolvendo JSON."
+    "Você é um editor de cortes especializado em criar conteúdo viral para Shorts. "
+    "Receberá a transcrição numerada de um episódio e deve escolher os melhores trechos virais, "
+    "criando títulos chamativos e tags relevantes baseados no contexto do vídeo original."
 )
 
 def clean_json_response(content):
@@ -20,14 +21,37 @@ def clean_json_response(content):
         content = content[:-3]
     return content.strip()
 
-def find_highlights(transcript: list, n: int = 3):
+def find_highlights(transcript: list, video_info: dict = None, n: int = 3):
     joined = "\n".join(f"[{i}] {seg['text']}" for i, seg in enumerate(transcript))
+    
+    # Contexto do vídeo original
+    context_info = ""
+    if video_info:
+        context_info = f"""
+        CONTEXTO DO VÍDEO ORIGINAL:
+        - Título: {video_info.get('title', 'N/A')}
+        - Canal: {video_info.get('channel', 'N/A')}
+        - Duração: {video_info.get('duration', 0) // 60}min
+        - Tags originais: {', '.join(video_info.get('tags', [])[:5])}
+        """
+    
     prompt = textwrap.dedent(f"""
+        {context_info}
+        
         Escolha os {n} segmentos mais virais/de impacto.
-        Responda APENAS com JSON: [{{"idx": <int>, "hook": "<título chamativo>"}}]
+        
+        INSTRUÇÕES:
+        1. Considere o título e canal do vídeo original para criar títulos contextuais
+        2. Use tags que combinem com o tema do vídeo original + viralidade
+        3. Títulos devem ser chamativos e relacionados ao conteúdo do trecho
+        4. Tags devem incluir palavras-chave do tema + termos virais
+        
+        Responda APENAS com JSON: [{{"idx": <int>, "hook": "<título chamativo e contextual>", "tags": ["<tag1>", "<tag2>", ...]}}]
+        
         Transcrição:
         {joined}
     """)
+    
     response = call_llm(
         role="highlighter",
         messages=[

@@ -1,6 +1,7 @@
 # Arquivos de ambiente e credenciais
 .env
 client_secret.json
+token.json
 
 # Ambiente virtual
 venv/

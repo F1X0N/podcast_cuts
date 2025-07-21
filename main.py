@@ -4,9 +4,11 @@ Pipeline completo: python main.py <URL_DO_EPISÓDIO>
 """
 import sys, yaml, os
 from dotenv import load_dotenv
-from modules import downloader, transcriber, highlighter, editor, youtube_uploader, thumbnail, moviepy_patch, moviepy_config
+from modules import downloader, transcriber, highlighter, editor, youtube_uploader, moviepy_patch, moviepy_config
 from modules.llm_utils import print_llm_report, save_cost_log, save_error_log
 from modules.config import load_cfg
+
+from pathlib import WindowsPath
 
 # Aplica o patch do MoviePy
 moviepy_patch.patch_resize()
@@ -15,14 +17,14 @@ load_dotenv()
 
 def run(episode_url: str):
     cfg = load_cfg()
-    
+
     # Tenta carregar checkpoint
     checkpoint = editor.load_checkpoint(cfg["paths"]["clips"])
     if checkpoint:
-        print("Checkpoint encontrado! Deseja continuar de onde parou? (s/n)")
         if input().lower() == 's':
             video_path = checkpoint["video_path"]
             transcript = checkpoint["transcript"]
+            video_info = checkpoint.get("video_info", {})
             hls = [checkpoint["highlight"]]  # Processa apenas o highlight do checkpoint
         else:
             editor.clear_checkpoint(cfg["paths"]["clips"])
@@ -30,26 +32,45 @@ def run(episode_url: str):
     
     if not checkpoint:
         print("Baixando episódio…")
-        video = downloader.download(episode_url, cfg["paths"]["raw"])
+        video, video_info = downloader.download(episode_url, cfg["paths"]["raw"])
         video_path = str(video)
+        
+        print(f"Vídeo: {video_info.get('title', 'N/A')}")
+        print(f"Canal: {video_info.get('channel', 'N/A')}")
 
         print("Transcrevendo…")
         transcript = transcriber.transcribe(video_path, cfg["whisper_size"])
 
         print("Selecionando highlights…")
-        hls = highlighter.find_highlights(transcript, cfg["highlights"])
+        hls = highlighter.find_highlights(transcript, video_info, cfg["highlights"])
 
     for h in hls:
         print(f"\nGerando corte: {h['hook']}")
         # Salva checkpoint antes de processar cada highlight
-        editor.save_checkpoint(cfg["paths"]["clips"], video_path, h, transcript)
+        editor.save_checkpoint(cfg["paths"]["clips"], video_path, h, transcript, video_info)
         
         clip_path = editor.make_clip(video_path, h, transcript, cfg["paths"]["clips"])
-        thumb_path = thumbnail.gen_thumbnail(h["hook"])
         
         if not cfg.get("test_mode", False):
-            desc = f"{h['hook']} | Trecho do podcast original: {episode_url}"
-            youtube_uploader.upload(str(clip_path), h["hook"], desc, tags=cfg["tags"])
+            # Cria descrição com informações do vídeo original
+            original_title = video_info.get('title', 'Vídeo Original')
+            original_channel = video_info.get('channel', 'Canal Original')
+            
+            desc = f"""{h['hook']}
+
+🎬 Trecho extraído do episódio: "{original_title}"
+📺 Canal original: {original_channel}
+🔗 Vídeo completo: {episode_url}"""
+            
+            tags_string = "#" + " #".join(h.get('tags', []))
+
+            desc += f"\n\n{tags_string}"
+
+            # Combina tags do highlight com tags padrão
+            all_tags = h.get('tags', []) + cfg.get("tags", [])
+            
+            youtube_uploader.upload(str(clip_path), h["hook"], desc, tags=all_tags)
+
             print("✔️ Upload concluído")
         else:
             print(f"✔️ Modo de teste: corte gerado em {clip_path}")

@@ -6,6 +6,7 @@ import re
 import unicodedata
 import os
 import json
+import numpy as np
 
 def sanitize_filename(name, max_length=50):
     # Remove acentos
@@ -31,12 +32,13 @@ def get_checkpoint_path(out_dir: str) -> Path:
     """Retorna o caminho do arquivo de checkpoint"""
     return Path(out_dir) / "checkpoint.json"
 
-def save_checkpoint(out_dir: str, video_path: str, highlight: dict, transcript: list):
+def save_checkpoint(out_dir: str, video_path: str, highlight: dict, transcript: list, video_info: dict = None):
     """Salva o estado atual do processamento"""
     checkpoint = {
         "video_path": video_path,
         "highlight": highlight,
-        "transcript": transcript
+        "transcript": transcript,
+        "video_info": video_info or {}
     }
     checkpoint_path = get_checkpoint_path(out_dir)
     # Cria o diretório se não existir
@@ -195,8 +197,132 @@ def highlight_keywords(text: str) -> str:
     
     return ' '.join(highlighted_words)
 
-def make_clip(video_path: str, highlight: dict, transcript: list,
-              out_dir: str = "clips") -> Path:
+def create_template_clip(width: int, height: int, duration: float) -> mp.VideoClip:
+    """
+    Cria um template com header e footer baseado no molde fornecido.
+    """
+    # Cria um clip de fundo com gradiente azul/roxo
+    def make_background_frame(t):
+        # Gradiente horizontal azul para roxo
+        frame = np.zeros((height, width, 3), dtype=np.uint8)
+        for x in range(width):
+            # Gradiente de azul (esquerda) para roxo (direita)
+            blue_ratio = 1 - (x / width)
+            purple_ratio = x / width
+            
+            # Cores base (azul escuro e roxo escuro)
+            blue_color = np.array([30, 30, 100])  # Azul escuro
+            purple_color = np.array([80, 30, 100])  # Roxo escuro
+            
+            # Mistura as cores
+            color = (blue_color * blue_ratio + purple_color * purple_ratio).astype(np.uint8)
+            frame[:, x] = color
+        
+        return frame
+    
+    background = mp.VideoClip(make_background_frame, duration=duration)
+    
+    # Calcula dimensões das seções
+    header_height = int(height * 0.15)  # 15% para header
+    footer_height = int(height * 0.10)  # 10% para footer
+    video_area_height = height - header_height - footer_height
+    
+    # Cria header
+    header_elements = []
+    
+    # Logo circular "CV"
+    logo_size = int(header_height * 0.6)
+    logo_x = int(width * 0.05)
+    logo_y = header_height // 2
+    
+    # Cria logo circular com gradiente
+    def make_logo_frame(t):
+        frame = np.zeros((logo_size, logo_size, 3), dtype=np.uint8)
+        center = logo_size // 2
+        radius = logo_size // 2 - 5
+        
+        for y in range(logo_size):
+            for x in range(logo_size):
+                dist = np.sqrt((x - center)**2 + (y - center)**2)
+                if dist <= radius:
+                    # Gradiente circular azul para roxo
+                    angle = np.arctan2(y - center, x - center)
+                    ratio = (angle + np.pi) / (2 * np.pi)
+                    blue_ratio = 1 - ratio
+                    purple_ratio = ratio
+                    
+                    blue_color = np.array([100, 150, 255])  # Azul claro
+                    purple_color = np.array([200, 100, 255])  # Roxo claro
+                    color = (blue_color * blue_ratio + purple_color * purple_ratio).astype(np.uint8)
+                    frame[y, x] = color
+        return frame
+    
+    logo_clip = mp.VideoClip(make_logo_frame, duration=duration)
+    logo_clip = logo_clip.set_position((logo_x, logo_y - logo_size//2))
+    header_elements.append(logo_clip)
+    
+    # Texto "CV" no logo
+    cv_text = mp.TextClip("CV", fontsize=int(logo_size * 0.4), font="Arial-Bold", 
+                         color="white", stroke_color="black", stroke_width=1)
+    cv_text = cv_text.set_position((logo_x + logo_size//2 - cv_text.w//2, 
+                                   logo_y - cv_text.h//2))
+    cv_text = cv_text.set_duration(duration)
+    header_elements.append(cv_text)
+    
+    # Título "CLIPVERSO"
+    title_x = logo_x + logo_size + int(width * 0.03)
+    title_y = header_height // 2 - int(header_height * 0.15)
+    
+    title_clip = mp.TextClip("CLIPVERSO", fontsize=int(header_height * 0.25), 
+                            font="Arial-Bold", color="white")
+    title_clip = title_clip.set_position((title_x, title_y))
+    title_clip = title_clip.set_duration(duration)
+    header_elements.append(title_clip)
+    
+    # Subtitle "CANAL DE CORTES"
+    subtitle_y = title_y + int(header_height * 0.25)
+    subtitle_clip = mp.TextClip("CANAL DE CORTES", fontsize=int(header_height * 0.15), 
+                               font="Arial", color="#87CEEB")  # Azul claro
+    subtitle_clip = subtitle_clip.set_position((title_x, subtitle_y))
+    subtitle_clip = subtitle_clip.set_duration(duration)
+    header_elements.append(subtitle_clip)
+    
+    # Linha superior do header
+    line_y = header_height - 2
+    line_clip = mp.ColorClip(size=(width, 2), color=[100, 150, 255], duration=duration)
+    line_clip = line_clip.set_position((0, line_y))
+    header_elements.append(line_clip)
+    
+    # Cria footer
+    footer_elements = []
+    
+    # Linha inferior do footer
+    footer_line_y = header_height + video_area_height
+    footer_line_clip = mp.ColorClip(size=(width, 2), color=[100, 150, 255], duration=duration)
+    footer_line_clip = footer_line_clip.set_position((0, footer_line_y))
+    footer_elements.append(footer_line_clip)
+    
+    # Texto do footer
+    footer_text = "Se inscreva • Dé o like • @clipverso-ofc"
+    footer_text_y = footer_line_y + int(footer_height * 0.3)
+    footer_text_clip = mp.TextClip(footer_text, fontsize=int(footer_height * 0.3), 
+                                  font="Arial-Bold", color="white")
+    footer_text_clip = footer_text_clip.set_position(("center", footer_text_y))
+    footer_text_clip = footer_text_clip.set_duration(duration)
+    footer_elements.append(footer_text_clip)
+    
+    # Combina todos os elementos
+    template = mp.CompositeVideoClip([background] + header_elements + footer_elements, 
+                                   size=(width, height))
+    
+    return template
+
+def make_clip(
+        video_path: str, 
+        highlight: dict, 
+        transcript: list,
+        out_dir: str = "clips"
+    ) -> Path:
     """
     Recorta, converte para vertical 9:16, gera legendas dinâmicas estilizadas e devolve o caminho final.
     Garante que o clipe tenha no mínimo 1 minuto de duração.
@@ -204,56 +330,62 @@ def make_clip(video_path: str, highlight: dict, transcript: list,
     seg = transcript[highlight["idx"]]
     Path(out_dir).mkdir(exist_ok=True)
 
-    # Carrega o vídeo
-    print(f"Carregando vídeo: {video_path}")
     clip = mp.VideoFileClip(video_path)
     video_duration = clip.duration
-    print(f"Duração do vídeo: {video_duration:.2f}s")
 
     # Define início e fim do corte
     start = seg["start"]
     end = seg["end"]
-    min_duration = 60  # 1 minuto
+    min_duration = 70  # 1 minuto
     if end - start < min_duration:
         end = min(start + min_duration, video_duration)
-    print(f"Corte: {start:.2f}s -> {end:.2f}s")
-    
+
     # Recorta o trecho
     clip = clip.subclip(start, end)
+
+    # Define dimensões finais do template
+    final_width = 1080
+    final_height = 1920
     
-    # Redimensiona para 1080x1920 (vertical)
-    print("Redimensionando para formato vertical...")
-    # Primeiro redimensiona pela altura para 1920px
-    clip = clip.resize(height=1920)
+    # Calcula dimensões das seções do template
+    header_height = int(final_height * 0.15)  # 15% para header
+    footer_height = int(final_height * 0.10)  # 10% para footer
+    video_area_height = final_height - header_height - footer_height
+    video_area_width = final_width - 40  # Margem de 20px de cada lado
+    
+    # Redimensiona o vídeo para caber na área de vídeo do template
+    clip = clip.resize(height=video_area_height)
     w, h = clip.size
-    # Calcula o centro e corta as laterais para manter proporção 9:16
-    x_center = w/2
-    y_center = h/2
-    width = 1080  # Largura fixa para proporção 9:16
-    height = 1920
-    clip = clip.crop(x_center=x_center, y_center=y_center, width=width, height=height)
+    
+    # Se o vídeo for mais largo que a área disponível, corta as laterais
+    if w > video_area_width:
+        x_center = w // 2
+        y_center = h // 2
+        clip = clip.crop(x_center=x_center, y_center=y_center, 
+                        width=video_area_width, height=video_area_height)
+    else:
+        # Se for mais estreito, centraliza
+        clip = clip.resize(width=video_area_width, height=video_area_height)
+    
+    # Garante dimensões pares
     final_w, final_h = clip.size
     if final_w % 2 != 0 or final_h % 2 != 0:
         new_w = final_w // 2 * 2
         new_h = final_h // 2 * 2
         clip = clip.resize(newsize=(new_w, new_h))
-    print(f"Tamanho final: {final_w}x{final_h}")
+    
+    print(f"Tamanho do vídeo na área: {final_w}x{final_h}")
 
-    # Gera legendas dinâmicas sincronizadas
-    print("Gerando legendas...")
     font_path = get_font_path()
-    fontsize = int(0.06 * height)  # 6% da altura
-    margin_bottom = int(0.15 * height)  # Aumentei a margem para subir a legenda
+    fontsize = int(0.06 * video_area_height)  # 4% da altura da área de vídeo
+    margin_bottom = int(0.08 * video_area_height)  # Margem dentro da área de vídeo
     legendas = []
     
     # Testa se a fonte está funcionando
     try:
-        test_clip = mp.TextClip("Teste", fontsize=fontsize, font=font_path, color="white")
+        test_clip = mp.TextClip("Teste", fontsize=fontsize, font=font_path, fontweight="bold", color="white")
         test_clip.close()
-        print("Fonte testada com sucesso")
     except Exception as e:
-        print(f"Erro ao testar fonte: {e}")
-        print("Usando fonte padrão do sistema")
         font_path = "Arial"
     
     print(f"Processando {len(transcript)} segmentos de texto...")
@@ -270,7 +402,7 @@ def make_clip(video_path: str, highlight: dict, transcript: list,
         print(f"Processando segmento {i}: {seg_start:.2f}s -> {seg_end:.2f}s")
         
         # Segmenta o texto em partes menores
-        segmentos = segment_text(txt, max_chars=20)  # Reduzido para garantir uma linha
+        segmentos = segment_text(txt, max_chars=20)
         
         # Calcula a duração total do segmento de áudio
         duracao_total = seg_end - seg_start
@@ -281,69 +413,64 @@ def make_clip(video_path: str, highlight: dict, transcript: list,
         
         for j, segmento in enumerate(segmentos):
             # Calcula a duração proporcional ao tamanho do texto
-            duracao_segmento = (len(segmento) * duracao_base) * 1.2  # 20% extra para pausas naturais
+            duracao_segmento = (len(segmento) * duracao_base) * 1
             
             # Calcula o tempo de início e fim para cada subsegmento
             if j == 0:
                 subseg_start = seg_start
             else:
-                # Usa o fim do segmento anterior como início do atual
-                subseg_start = seg_start + sum(len(s) * duracao_base * 1.2 for s in segmentos[:j])
+                subseg_start = seg_start + sum(len(s) * duracao_base * 1 for s in segmentos[:j])
             
             subseg_end = subseg_start + duracao_segmento
-            
-            # Destaca palavras importantes
+
             segmento_destacado = highlight_keywords(segmento)
-            
+
             try:
-                # Cria a legenda
                 legenda = create_animated_text(
                     segmento_destacado,
                     duracao_segmento,
                     font_path,
                     fontsize,
-                    width,
-                    ("center", height - fontsize - margin_bottom)
+                    video_area_width,
+                    ("center", video_area_height - fontsize - margin_bottom)
                 )
-                
-                # Define o tempo de início com offset negativo de 0.3s
-                legenda = legenda.set_start(max(0, subseg_start - 0.3))
-                
-                print(f"Legenda criada: {segmento[:50]}... (Duração: {duracao_segmento:.2f}s)")
+
+                legenda = legenda.set_start(max(0, subseg_start - 0))
                 legendas.append(legenda)
             except Exception as e:
                 print(f"Erro ao criar legenda: {segmento[:50]}... | Erro: {e}")
                 print(f"Detalhes do erro: {str(e)}")
                 continue
+
+    # Cria o template com header e footer
+    template = create_template_clip(final_width, final_height, clip.duration)
     
-    print(f"Total de legendas criadas: {len(legendas)}")
+    # Posiciona o vídeo com legendas na área central do template
+    video_with_subtitles = mp.CompositeVideoClip([clip] + legendas, 
+                                                size=(video_area_width, video_area_height))
+    video_with_subtitles = video_with_subtitles.set_position((20, header_height))  # 20px de margem
     
-    if not legendas:
-        print("AVISO: Nenhuma legenda foi criada!")
-        print("Verifique se há segmentos de texto dentro do corte e se a fonte está funcionando corretamente.")
-    
-    # Combina vídeo e legendas
-    print("Combinando elementos...")
-    elementos = [clip] + legendas
-    final = mp.CompositeVideoClip(elementos, size=(width, height))
-    
-    # Salva o arquivo com nome seguro
+    # Combina template com vídeo
+    final = mp.CompositeVideoClip([template, video_with_subtitles], 
+                                size=(final_width, final_height))
+
     safe_hook = sanitize_filename(highlight['hook'])
     outfile = Path(out_dir) / f"{safe_hook}.mp4"
-    print(f"Salvando vídeo em: {outfile}")
+
     final.write_videofile(str(outfile), 
-                         codec="libx264", 
-                         fps=30, 
-                         preset="ultrafast",
-                         ffmpeg_params=[
-                             "-profile:v", "main", 
-                             "-pix_fmt", "yuv420p",
-                             "-vf", "format=yuv420p"  # Força o formato de cor correto
-                         ],
-                         audio_codec="aac")
-    
-    # Limpa os recursos
+        codec="libx264", 
+        fps=30, 
+        preset="ultrafast",
+        ffmpeg_params=[
+            "-profile:v", "main", 
+            "-pix_fmt", "yuv420p",
+            "-vf", "format=yuv420p"
+        ],
+        audio_codec="aac"
+    )
+
     clip.close()
     final.close()
-    
+    template.close()
+
     return outfile

@@ -3,10 +3,10 @@ paths:
   clips: clips
 whisper_size: base        # tiny / base / small / medium
 highlights: 1             # nº de cortes por episódio
-tags: ["podcast", "cortes", "clipverso"]
-test_mode: true          # true = pula upload para YouTube
+tags: ["podcast", "cortes", "clipverso", "clipverso-ofc"]
+test_mode: false          # true = pula upload para YouTube (mantenha true para testes)
 
 openai_models:
-  highlighter: gpt-4o
-  editor: gpt-4o
+  highlighter: o3
+  editor: o3
   thumbnail: dall-e-3    # Modelo para geração de imagens

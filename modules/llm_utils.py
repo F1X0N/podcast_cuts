@@ -22,6 +22,7 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 # Atualize conforme necessário
 OPENAI_PRICES = {
     "gpt-4o": {"input": 5.0/1_000_000, "output": 15.0/1_000_000},
+    "o3": {"input": 0.15/1_000_000, "output": 0.6/1_000_000},  # GPT-4o-mini
     "gpt-4-turbo": {"input": 10.0/1_000_000, "output": 30.0/1_000_000},
     "gpt-4": {"input": 30.0/1_000_000, "output": 60.0/1_000_000},
     "gpt-3.5-turbo": {"input": 0.5/1_000_000, "output": 1.5/1_000_000},
