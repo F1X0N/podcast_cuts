@@ -2,7 +2,7 @@ paths:
   raw: raw
   clips: clips
 whisper_size: base        # tiny / base / small / medium
-highlights: 1             # nº de cortes por episódio
+highlights: 6             # nº de cortes por episódio
 tags: ["cortes", "viral", "fy", "clipverso-ofc"]
 test_mode: false          # true = pula upload para YouTube (mantenha true para testes)
 
@@ -19,3 +19,8 @@ video_optimization:
 
 # Configurações de outros
 append_outro: true        # true = anexa outro ao final de cada corte
+
+# Configurações de upload
+upload_delay:
+  min_seconds: 1800       # Delay mínimo entre uploads (30 minutos)
+  max_seconds: 3600       # Delay máximo entre uploads (1 hora)

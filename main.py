@@ -2,7 +2,7 @@
 """
 Pipeline completo: python main.py <URL_DO_EPISÓDIO>
 """
-import sys, yaml, os
+import sys, yaml, os, time, random
 from dotenv import load_dotenv
 from modules import downloader, transcriber, highlighter, editor, youtube_uploader, moviepy_patch, moviepy_config, outro_appender
 from modules.llm_utils import print_llm_report, save_cost_log, save_error_log
@@ -90,9 +90,19 @@ def run(episode_url: str):
 🎬 Trecho extraído do episódio: "{original_title}"
 📺 Canal original: {original_channel}"""
             
-            tags_string = "#" + " #".join(all_tags)
+            tags_string = " #".join(all_tags)
 
             desc += f"\n\n{tags_string}"
+
+            # Delay aleatório entre uploads para evitar detecção
+            upload_delay_config = cfg.get("upload_delay", {"min_seconds": 3600, "max_seconds": 5400})
+            random_time = random.randint(
+                upload_delay_config["min_seconds"], 
+                upload_delay_config["max_seconds"]
+            )
+            
+            print(f"⏳ Aguardando {random_time//60} minutos antes do upload...")
+            time.sleep(random_time)
 
             youtube_uploader.upload(str(final_clip_path), h["hook"], desc, tags=all_tags)
 

@@ -96,6 +96,25 @@ video_optimization:
 
 # Configurações de outros
 append_outro: true        # true = anexa outro ao final de cada corte
+
+# Configurações de upload
+upload_delay:
+  min_seconds: 3600       # Delay mínimo entre uploads (1 hora)
+  max_seconds: 5400       # Delay máximo entre uploads (1.5 horas)
+```
+
+### ⏰ Configurações de Upload
+
+O sistema inclui um delay aleatório entre uploads para evitar detecção de automação:
+
+- **min_seconds**: Tempo mínimo de espera (padrão: 3600s = 1 hora)
+- **max_seconds**: Tempo máximo de espera (padrão: 5400s = 1.5 horas)
+
+Para desabilitar o delay, configure ambos como `0`:
+```yaml
+upload_delay:
+  min_seconds: 0
+  max_seconds: 0
 ```
 
 ## Uso

@@ -49,7 +49,7 @@ def save_clip_metadata(video_dir: Path, clip_filename: str, highlight: dict, vid
 🎬 Trecho extraído do episódio: "{original_title}"
 📺 Canal original: {original_channel}"""
 
-    tags_string = "#" + " #".join(all_tags)
+    tags_string = " #".join(all_tags)
     desc += f"\n\n{tags_string}"
     
     # Salva o arquivo de metadados
