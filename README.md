@@ -87,6 +87,15 @@ openai_models:
   highlighter: gpt-4o
   editor: gpt-4o
   thumbnail: dall-e-3
+
+# Configurações de otimização de vídeo
+video_optimization:
+  use_gpu: true          # true = usa GPU AMD se disponível
+  quality: balanced       # fast, balanced, high
+  enable_parallel: true   # true = processamento paralelo quando possível
+
+# Configurações de outros
+append_outro: true        # true = anexa outro ao final de cada corte
 ```
 
 ## Uso
@@ -110,9 +119,12 @@ poetry run python main.py "URL_DO_PODCAST"
 
 ```
 podcast-cuts/
+├── assets/        # Assets do projeto
+│   └── outros/    # Outros gerados (outro1.mp4, outro2.mp4, outro3.mp4)
 ├── clips/          # Cortes gerados
 │   └── Nome_do_Video/  # Diretório específico por vídeo
 │       ├── corte1.mp4
+│       ├── corte1_com_outro.mp4  # Corte com outro anexado
 │       ├── corte1_metadata.json
 │       ├── corte2.mp4
 │       └── corte2_metadata.json
@@ -123,9 +135,55 @@ podcast-cuts/
 ├── config.yaml    # Configurações
 ├── .env           # Variáveis de ambiente
 ├── main.py        # Script principal
+├── generate_outros.py  # Gerador de outros
+├── test_outros.py      # Teste do sistema de outros
 ├── list_clips.py  # Lista vídeos processados
 └── copy_metadata.py # Copia metadados para área de transferência
 ```
+
+## Sistema de Outros
+
+O ClipVerso inclui um sistema automatizado de outros que adiciona um call-to-action padronizado ao final de cada corte.
+
+### 🎬 Características dos Outros
+
+- **3 Variações**: Sistema gera 3 outros diferentes para evitar repetição
+- **TTS em Português**: Voz sintética pedindo like, inscrição e comentários
+- **Animações**: Textos animados com efeitos de escala e fade
+- **Branding**: Logo "CV" e identidade visual do ClipVerso
+- **Duração**: 5 segundos, formato vertical 1080x1920
+
+### 🔧 Como Usar
+
+1. **Gerar Outros** (primeira vez):
+   ```bash
+   python generate_outros.py
+   ```
+
+2. **Testar Sistema**:
+   ```bash
+   python test_outros.py
+   ```
+
+3. **Configurar** (opcional):
+   ```yaml
+   # config.yaml
+   append_outro: true  # true = anexa outro automaticamente
+   ```
+
+### 📁 Arquivos Gerados
+
+- `assets/outros/outro1.mp4` - Primeira variação
+- `assets/outros/outro2.mp4` - Segunda variação  
+- `assets/outros/outro3.mp4` - Terceira variação
+
+### 🎯 Integração Automática
+
+O sistema automaticamente:
+- Escolhe um outro aleatório para cada corte
+- Anexa o outro ao final do vídeo
+- Mantém o corte original como backup
+- Gera arquivo `corte_com_outro.mp4` para upload
 
 ## Sistema de Checkpoint
 
@@ -169,6 +227,24 @@ O sistema implementa um mecanismo robusto de checkpoint para permitir a retomada
 - Mensagens claras indicam quando um checkpoint é rejeitado e por quê
 
 ## Scripts Utilitários
+
+### Gerar Outros do ClipVerso
+Para gerar os outros padronizados do canal:
+```bash
+python generate_outros.py
+```
+
+Este script cria 3 variações de outros com:
+- TTS em português brasileiro
+- Animações baseadas no molde do ClipVerso
+- Textos engajantes ("Curtiu? Deixa o like 👍", etc.)
+- Duração de 5 segundos, formato 1080x1920
+
+### Testar Sistema de Outros
+Para validar se os outros estão funcionando:
+```bash
+python test_outros.py
+```
 
 ### Listar Vídeos Processados
 Para ver todos os vídeos processados e seus cortes:

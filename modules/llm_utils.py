@@ -65,13 +65,14 @@ def save_error_log(error, episode_url=None):
         f.write(f"[{now}] Episódio: {episode_url}\n{error}\n{'-'*60}\n")
 
 # Função centralizada para chamada de LLM
-def call_llm(role, messages=None, prompt=None, image=False, n=1, size=None, quality=None):
+def call_llm(role, messages=None, prompt=None, image=False, n=1, size=None, quality=None, response_format=None):
     """
     role: etapa do pipeline (ex: 'highlighter', 'editor', 'thumbnail')
     messages: lista de mensagens para chat/completion
     prompt: prompt para geração de imagem
     image: se True, gera imagem
     n, size, quality: parâmetros para imagem
+    response_format: formato de resposta esperado (ex: {"type": "json_object"})
     """
     model = CONFIG["openai_models"][role]
     client = OpenAI(api_key=OPENAI_API_KEY)
@@ -90,10 +91,14 @@ def call_llm(role, messages=None, prompt=None, image=False, n=1, size=None, qual
         result = response
     else:
         # Chat/completion
-        response = client.chat.completions.create(
-            model=model,
-            messages=messages,
-        )
+        kwargs = {
+            "model": model,
+            "messages": messages,
+        }
+        if response_format:
+            kwargs["response_format"] = response_format
+            
+        response = client.chat.completions.create(**kwargs)
         usage = response.usage
         input_tokens = usage.prompt_tokens
         output_tokens = usage.completion_tokens

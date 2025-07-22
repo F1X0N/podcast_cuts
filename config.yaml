@@ -16,3 +16,6 @@ video_optimization:
   use_gpu: true          # true = usa GPU AMD se disponível
   quality: balanced       # fast, balanced, high
   enable_parallel: true   # true = processamento paralelo quando possível
+
+# Configurações de outros
+append_outro: true        # true = anexa outro ao final de cada corte

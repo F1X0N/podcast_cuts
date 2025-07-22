@@ -484,7 +484,7 @@ def make_clip(
     # Define início e fim do corte
     start = seg["start"]
     end = seg["end"]
-    min_duration = 61  # 1 minuto e 1 segundo
+    min_duration = 70  # 1 minuto e 10 segundos
     if end - start < min_duration:
         end = min(start + min_duration, video_duration)
 

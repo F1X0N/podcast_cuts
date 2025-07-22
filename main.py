@@ -4,7 +4,7 @@ Pipeline completo: python main.py <URL_DO_EPISÓDIO>
 """
 import sys, yaml, os
 from dotenv import load_dotenv
-from modules import downloader, transcriber, highlighter, editor, youtube_uploader, moviepy_patch, moviepy_config
+from modules import downloader, transcriber, highlighter, editor, youtube_uploader, moviepy_patch, moviepy_config, outro_appender
 from modules.llm_utils import print_llm_report, save_cost_log, save_error_log
 from modules.config import load_cfg
 
@@ -67,6 +67,18 @@ def run(episode_url: str):
         clip_filename = clip_path.name
         all_tags = h.get('tags', []) + cfg.get("tags", [])
         editor.save_clip_metadata(video_dir, clip_filename, h, video_info, episode_url, all_tags)
+
+        # Anexa outro ao corte se configurado
+        final_clip_path = clip_path
+        if cfg.get("append_outro", True):  # Por padrão, anexa outro
+            try:
+                print("🎬 Anexando outro ao corte...")
+                final_clip_path = outro_appender.append_outro(str(clip_path), optimization_config)
+                print(f"✅ Outro anexado: {final_clip_path}")
+            except Exception as e:
+                print(f"⚠️ Erro ao anexar outro: {e}")
+                print("   Continuando com o corte original...")
+                final_clip_path = clip_path
         
         if not cfg.get("test_mode", False):
             # Cria descrição com informações do vídeo original
@@ -82,11 +94,11 @@ def run(episode_url: str):
 
             desc += f"\n\n{tags_string}"
 
-            youtube_uploader.upload(str(clip_path), h["hook"], desc, tags=all_tags)
+            youtube_uploader.upload(str(final_clip_path), h["hook"], desc, tags=all_tags)
 
             print("✔️ Upload concluído")
         else:
-            print(f"✔️ Modo de teste: corte gerado em {clip_path}")
+            print(f"✔️ Modo de teste: corte gerado em {final_clip_path}")
     
     # Limpa o checkpoint após processar todos os highlights
     editor.clear_checkpoint(cfg["paths"]["clips"])

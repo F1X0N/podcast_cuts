@@ -36,8 +36,7 @@ def update_config():
     with open(CONFIG_FILE, "w", encoding="utf-8") as f:
         for line in lines:
             if line.strip().startswith("IMAGEMAGICK_BINARY"):
-                f.write(f'IMAGEMAGICK_BINARY = r"{MAGICK_BINARY}"
-')
+                f.write(f'IMAGEMAGICK_BINARY = r"{MAGICK_BINARY}"\n')
             else:
                 f.write(line)
     print("Configuração atualizada!")
