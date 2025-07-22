@@ -742,3 +742,87 @@
   total_brl: 0.0
   total_usd: 0
   usd_brl: 5.0
+- data: '2025-07-21 15:36:59'
+  episodio: https://www.youtube.com/watch?v=kFxQ4-RBySA
+  etapas: {}
+  total_brl: 0.0
+  total_usd: 0
+  usd_brl: 5.0
+- data: '2025-07-21 15:46:51'
+  episodio: https://www.youtube.com/watch?v=PTxoPKAqceo
+  etapas: {}
+  total_brl: 0.0
+  total_usd: 0
+  usd_brl: 5.0
+- data: '2025-07-21 23:39:10'
+  episodio: https://www.youtube.com/watch?v=PTxoPKAqceo
+  etapas: {}
+  total_brl: 0.0
+  total_usd: 0
+  usd_brl: 5.0
+- data: '2025-07-22 00:01:04'
+  episodio: https://www.youtube.com/watch?v=kFxQ4-RBySA
+  etapas:
+    highlighter:
+      cache: 0
+      calls: 1
+      input: 5696
+      output: 929
+      usd: 0.0014118
+  total_brl: 0.007058999999999999
+  total_usd: 0.0014118
+  usd_brl: 5.0
+- data: '2025-07-22 00:10:35'
+  episodio: https://www.youtube.com/watch?v=PTxoPKAqceo
+  etapas:
+    highlighter:
+      cache: 0
+      calls: 1
+      input: 3982
+      output: 559
+      usd: 0.0009326999999999998
+  total_brl: 0.004663499999999999
+  total_usd: 0.0009326999999999998
+  usd_brl: 5.0
+- data: '2025-07-22 00:50:42'
+  episodio: https://www.youtube.com/watch?v=PTxoPKAqceo
+  etapas: {}
+  total_brl: 0.0
+  total_usd: 0
+  usd_brl: 5.0
+- data: '2025-07-22 01:20:12'
+  episodio: https://www.youtube.com/watch?v=JpA4WN0Q4e8
+  etapas:
+    highlighter:
+      cache: 0
+      calls: 1
+      input: 2087
+      output: 420
+      usd: 0.00056505
+  total_brl: 0.00282525
+  total_usd: 0.00056505
+  usd_brl: 5.0
+- data: '2025-07-22 01:26:19'
+  episodio: https://www.youtube.com/watch?v=IrqfN7tOlHE
+  etapas:
+    highlighter:
+      cache: 0
+      calls: 1
+      input: 5422
+      output: 613
+      usd: 0.0011811
+  total_brl: 0.0059055
+  total_usd: 0.0011811
+  usd_brl: 5.0
+- data: '2025-07-22 01:30:57'
+  episodio: https://www.youtube.com/watch?v=-iNEQrKJegk
+  etapas:
+    highlighter:
+      cache: 0
+      calls: 1
+      input: 6660
+      output: 369
+      usd: 0.0012204
+  total_brl: 0.006102
+  total_usd: 0.0012204
+  usd_brl: 5.0

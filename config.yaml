@@ -3,10 +3,16 @@ paths:
   clips: clips
 whisper_size: base        # tiny / base / small / medium
 highlights: 1             # nº de cortes por episódio
-tags: ["podcast", "cortes", "clipverso", "clipverso-ofc"]
+tags: ["cortes", "viral", "fy", "clipverso-ofc"]
 test_mode: false          # true = pula upload para YouTube (mantenha true para testes)
 
 openai_models:
   highlighter: o3
   editor: o3
   thumbnail: dall-e-3    # Modelo para geração de imagens
+
+# Configurações de otimização de vídeo
+video_optimization:
+  use_gpu: true          # true = usa GPU AMD se disponível
+  quality: balanced       # fast, balanced, high
+  enable_parallel: true   # true = processamento paralelo quando possível

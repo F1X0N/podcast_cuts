@@ -38,15 +38,16 @@ def find_highlights(transcript: list, video_info: dict = None, n: int = 3):
     prompt = textwrap.dedent(f"""
         {context_info}
         
-        Escolha os {n} segmentos mais virais/de impacto.
+        Escolha os {n} segmentos mais virais/de impacto com o objetivo de criar um vídeo curto e viral.
         
         INSTRUÇÕES:
-        1. Considere o título e canal do vídeo original para criar títulos contextuais
-        2. Use tags que combinem com o tema do vídeo original + viralidade
-        3. Títulos devem ser chamativos e relacionados ao conteúdo do trecho
-        4. Tags devem incluir palavras-chave do tema + termos virais
+        1. Considere o título e canal do vídeo original para criar títulos contextuais e chamativos;
+        2. Use tags que combinem com o tema do vídeo original + viralidade + hashtags;
+        3. Títulos devem ser chamativos e relacionados ao conteúdo do trecho;
+        4. Tags devem incluir palavras-chave do tema + termos virais + hashtags relevantes para divulgação em mídias sociais;
+        5. Crie uma breve descrição do trecho selecionado para ser usada no vídeo.
         
-        Responda APENAS com JSON: [{{"idx": <int>, "hook": "<título chamativo e contextual>", "tags": ["<tag1>", "<tag2>", ...]}}]
+        Responda APENAS com JSON: [{{"idx": <int>, "hook": "<título chamativo e contextual>", "tags": ["<tag1>", "<tag2>", ...], "description": "<descrição do trecho selecionado>"}}]
         
         Transcrição:
         {joined}

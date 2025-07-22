@@ -98,6 +98,8 @@ poetry run python main.py "URL_DO_PODCAST"
 
 2. O sistema irá:
    - Baixar o vídeo
+   - Criar um diretório específico para o vídeo baseado no título
+   - Salvar os cortes e metadados organizadamente
    - Transcrever o áudio
    - Selecionar os melhores momentos
    - Gerar miniaturas
@@ -109,13 +111,134 @@ poetry run python main.py "URL_DO_PODCAST"
 ```
 podcast-cuts/
 ├── clips/          # Cortes gerados
+│   └── Nome_do_Video/  # Diretório específico por vídeo
+│       ├── corte1.mp4
+│       ├── corte1_metadata.json
+│       ├── corte2.mp4
+│       └── corte2_metadata.json
 ├── raw/           # Vídeos originais
 ├── logs/          # Logs de erros e custos
 ├── modules/       # Módulos do sistema
 ├── fonts/         # Fontes para legendas
 ├── config.yaml    # Configurações
 ├── .env           # Variáveis de ambiente
-└── main.py        # Script principal
+├── main.py        # Script principal
+├── list_clips.py  # Lista vídeos processados
+└── copy_metadata.py # Copia metadados para área de transferência
+```
+
+## Sistema de Checkpoint
+
+O sistema implementa um mecanismo robusto de checkpoint para permitir a retomada de processamento interrompido e evitar conflitos em execuções paralelas.
+
+### 🔄 Funcionalidades do Checkpoint
+
+- **Retomada de Processamento**: Se o script for interrompido, pode continuar de onde parou
+- **Validação de URL**: Verifica se o checkpoint pertence ao episódio correto
+- **Segurança em Paralelo**: Evita que execuções paralelas usem checkpoints de outros episódios
+- **Validação de Arquivos**: Confirma se os arquivos de vídeo ainda existem
+
+### 🛡️ Validações Implementadas
+
+1. **Existência do Arquivo**: Verifica se o arquivo `checkpoint.json` existe
+2. **URL do Episódio**: Compara a URL do checkpoint com a URL atual
+3. **Arquivo de Vídeo**: Confirma se o arquivo de vídeo referenciado ainda existe
+4. **Integridade JSON**: Valida se o arquivo JSON está correto
+
+### 📝 Estrutura do Checkpoint
+
+```json
+{
+  "video_path": "raw/VIDEO_ID.mp4",
+  "highlight": {
+    "idx": 1,
+    "hook": "Título do corte",
+    "tags": ["tag1", "tag2"]
+  },
+  "transcript": [...],
+  "video_info": {...},
+  "episode_url": "https://www.youtube.com/watch?v=VIDEO_ID",
+  "created_at": "2024-01-01 12:00:00"
+}
+```
+
+### ⚠️ Comportamento em Execuções Paralelas
+
+- Se duas instâncias do script rodarem simultaneamente com URLs diferentes, cada uma terá seu próprio checkpoint
+- O sistema automaticamente detecta e rejeita checkpoints de outros episódios
+- Mensagens claras indicam quando um checkpoint é rejeitado e por quê
+
+## Scripts Utilitários
+
+### Listar Vídeos Processados
+Para ver todos os vídeos processados e seus cortes:
+```bash
+python list_clips.py
+```
+
+### Copiar Metadados
+Para copiar os metadados de um corte específico para a área de transferência:
+```bash
+python copy_metadata.py "Nome_do_Video" "Titulo_do_Corte"
+```
+
+**Exemplo:**
+```bash
+python copy_metadata.py "Podcast_Flow_123" "Momentos_Incriveis"
+```
+
+Isso copiará título, descrição, tags e informações do vídeo original para facilitar o uso em outras redes sociais.
+
+### Testar Validação de Checkpoint
+Para testar o sistema de validação de checkpoint:
+```bash
+python test_checkpoint_validation.py
+```
+
+Este script demonstra como o sistema valida checkpoints para evitar conflitos em execuções paralelas.
+
+### Testar Otimizações
+Para testar e configurar as otimizações de vídeo:
+```bash
+python test_optimization.py
+```
+
+Para executar benchmark completo:
+```bash
+python test_optimization.py --benchmark
+```
+
+### Testar Codec AMD
+Para testar especificamente o codec AMD:
+```bash
+python test_amd_codec.py
+```
+
+## Otimizações de Performance
+
+O sistema inclui várias otimizações para acelerar o processamento:
+
+### 🚀 Aceleração por GPU AMD
+- Detecta automaticamente GPUs AMD
+- Usa codec `h264_amf` para aceleração por hardware
+- Configurável via `config.yaml`
+
+### ⚡ Otimizações de CPU
+- Presets otimizados do FFmpeg
+- Processamento paralelo
+- Configurações de qualidade ajustáveis
+
+### 🎯 Configurações de Qualidade
+- **fast**: Máxima velocidade, qualidade reduzida
+- **balanced**: Equilíbrio entre velocidade e qualidade
+- **high**: Melhor qualidade, velocidade reduzida
+
+### 📊 Configuração no config.yaml
+```yaml
+video_optimization:
+  use_gpu: true          # Usa GPU AMD se disponível
+  quality: balanced       # fast, balanced, high
+  enable_parallel: true   # Processamento paralelo
 ```
 
 ## Logs e Monitoramento
@@ -146,6 +269,18 @@ podcast-cuts/
 3. Erro na API OpenAI:
    - Verifique se a chave API está correta no `.env`
    - Confirme se tem créditos suficientes
+
+4. **Erro no codec AMD (h264_amf):**
+   - Execute `python test_amd_codec.py` para diagnosticar
+   - Se o codec falhar, o sistema automaticamente usa fallback para CPU
+   - Para desabilitar GPU AMD, configure `use_gpu: false` no `config.yaml`
+   - Verifique se o FFmpeg tem suporte AMD instalado
+
+5. **Processamento muito lento:**
+   - Configure `quality: fast` no `config.yaml`
+   - Reduza `highlights` para 1
+   - Use `whisper_size: tiny`
+   - Feche outros programas durante o processamento
 
 ## Contribuindo
 

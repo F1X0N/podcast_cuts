@@ -7,6 +7,7 @@ import unicodedata
 import os
 import json
 import numpy as np
+from .video_optimizer import create_optimized_write_params, print_optimization_info, create_fallback_params
 
 def sanitize_filename(name, max_length=50):
     # Remove acentos
@@ -17,6 +18,76 @@ def sanitize_filename(name, max_length=50):
     name = name.replace(' ', '_')
     # Limita o tamanho
     return name[:max_length]
+
+def create_video_directory(base_clips_dir: str, video_info: dict) -> Path:
+    """
+    Cria um diretório específico para os cortes de um vídeo baseado no título
+    """
+    # Usa o título do vídeo para criar o nome do diretório
+    video_title = video_info.get('title', 'video_sem_titulo')
+    safe_title = sanitize_filename(video_title, max_length=100)
+    
+    # Cria o caminho completo
+    video_dir = Path(base_clips_dir) / safe_title
+    
+    # Cria o diretório se não existir
+    video_dir.mkdir(parents=True, exist_ok=True)
+    
+    print(f"Diretório criado para o vídeo: {video_dir}")
+    return video_dir
+
+def save_clip_metadata(video_dir: Path, clip_filename: str, highlight: dict, video_info: dict, episode_url: str, all_tags: list):
+    """
+    Salva os metadados do corte em um arquivo JSON
+    """
+    # Cria a descrição completa
+    original_title = video_info.get('title', 'Vídeo Original')
+    original_channel = video_info.get('channel', 'Canal Original')
+    
+    desc = f"""{highlight.get('description', highlight.get('hook', ''))}
+
+🎬 Trecho extraído do episódio: "{original_title}"
+📺 Canal original: {original_channel}"""
+
+    tags_string = "#" + " #".join(all_tags)
+    desc += f"\n\n{tags_string}"
+    
+    # Salva o arquivo de metadados
+    metadata_file = video_dir / f"{Path(clip_filename).stem}_metadata.txt"
+    with open(metadata_file, "w", encoding="utf-8") as f:
+        f.write(desc)
+    
+    print(f"Metadados salvos em: {metadata_file}")
+    return metadata_file
+
+def list_video_clips(base_clips_dir: str) -> dict:
+    """
+    Lista todos os vídeos processados e seus cortes
+    """
+    clips_info = {}
+    base_dir = Path(base_clips_dir)
+    
+    if not base_dir.exists():
+        print(f"Diretório {base_clips_dir} não encontrado")
+        return clips_info
+    
+    for video_dir in base_dir.iterdir():
+        if video_dir.is_dir():
+            video_name = video_dir.name
+            clips_info[video_name] = {
+                "video_dir": str(video_dir),
+                "clips": [],
+                "metadata_files": []
+            }
+            
+            # Lista os arquivos de vídeo e metadados
+            for file in video_dir.iterdir():
+                if file.suffix == '.mp4':
+                    clips_info[video_name]["clips"].append(file.name)
+                elif file.suffix == '.json' and 'metadata' in file.name:
+                    clips_info[video_name]["metadata_files"].append(file.name)
+    
+    return clips_info
 
 def get_font_path():
     # Usa Roboto-Bold.ttf da pasta fonts/ se existir, senão Arial
@@ -32,13 +103,15 @@ def get_checkpoint_path(out_dir: str) -> Path:
     """Retorna o caminho do arquivo de checkpoint"""
     return Path(out_dir) / "checkpoint.json"
 
-def save_checkpoint(out_dir: str, video_path: str, highlight: dict, transcript: list, video_info: dict = None):
+def save_checkpoint(out_dir: str, video_path: str, highlight: dict, transcript: list, video_info: dict = None, episode_url: str = None):
     """Salva o estado atual do processamento"""
     checkpoint = {
         "video_path": video_path,
         "highlight": highlight,
         "transcript": transcript,
-        "video_info": video_info or {}
+        "video_info": video_info or {},
+        "episode_url": episode_url,  # Adiciona a URL do episódio ao checkpoint
+        "created_at": str(Path().cwd())  # Adiciona timestamp de criação
     }
     checkpoint_path = get_checkpoint_path(out_dir)
     # Cria o diretório se não existir
@@ -47,13 +120,67 @@ def save_checkpoint(out_dir: str, video_path: str, highlight: dict, transcript: 
         json.dump(checkpoint, f, ensure_ascii=False, indent=2)
     print(f"Checkpoint salvo em: {checkpoint_path}")
 
-def load_checkpoint(out_dir: str) -> dict:
-    """Carrega o último checkpoint salvo"""
+def load_checkpoint(out_dir: str, episode_url: str = None) -> dict:
+    """
+    Carrega o último checkpoint salvo com validação da URL do episódio
+    
+    Args:
+        out_dir: Diretório onde está o checkpoint
+        episode_url: URL do episódio atual para validação
+    
+    Returns:
+        dict: Checkpoint se válido, None caso contrário
+    """
     checkpoint_path = get_checkpoint_path(out_dir)
+    
+    # Verifica se o arquivo de checkpoint existe
     if not checkpoint_path.exists():
+        print("ℹ️  Nenhum checkpoint encontrado")
         return None
-    with open(checkpoint_path, "r", encoding="utf-8") as f:
-        return json.load(f)
+    
+    try:
+        with open(checkpoint_path, "r", encoding="utf-8") as f:
+            checkpoint = json.load(f)
+        
+        # Validação da URL do episódio
+        if episode_url and checkpoint.get("episode_url"):
+            if checkpoint["episode_url"] != episode_url:
+                print(f"⚠️  Checkpoint inválido: URL do episódio não confere")
+                print(f"   Checkpoint: {checkpoint['episode_url']}")
+                print(f"   Atual: {episode_url}")
+                return None
+            else:
+                print(f"✅ Checkpoint válido encontrado para o episódio")
+        elif episode_url and not checkpoint.get("episode_url"):
+            print(f"⚠️  Checkpoint sem URL do episódio - considerando inválido para segurança")
+            return None
+        elif not episode_url:
+            print(f"ℹ️  Carregando checkpoint sem validação de URL")
+        
+        # Validação adicional: verifica se o arquivo de vídeo ainda existe
+        video_path = Path(checkpoint.get("video_path", ""))
+        if not video_path.exists():
+            print(f"⚠️  Checkpoint inválido: arquivo de vídeo não encontrado: {video_path}")
+            return None
+        
+        return checkpoint
+        
+    except (json.JSONDecodeError, KeyError, Exception) as e:
+        print(f"❌ Erro ao carregar checkpoint: {e}")
+        return None
+
+def validate_checkpoint_for_episode(out_dir: str, episode_url: str) -> dict:
+    """
+    Valida especificamente se existe um checkpoint válido para o episódio atual
+    
+    Args:
+        out_dir: Diretório onde está o checkpoint
+        episode_url: URL do episódio para validação
+    
+    Returns:
+        dict: Checkpoint se válido para o episódio, None caso contrário
+    """
+    return load_checkpoint(out_dir, episode_url)
 
 def clear_checkpoint(out_dir: str):
     """Remove o arquivo de checkpoint"""
@@ -61,6 +188,8 @@ def clear_checkpoint(out_dir: str):
     if checkpoint_path.exists():
         checkpoint_path.unlink()
         print("Checkpoint removido")
+    else:
+        print("ℹ️  Nenhum checkpoint encontrado para remoção")
 
 def segment_text(text: str, max_chars: int = 20) -> list:
     """
@@ -321,14 +450,33 @@ def make_clip(
         video_path: str, 
         highlight: dict, 
         transcript: list,
-        out_dir: str = "clips"
+        out_dir: str = "clips",
+        video_info: dict = None,
+        optimization_config: dict = None
     ) -> Path:
     """
     Recorta, converte para vertical 9:16, gera legendas dinâmicas estilizadas e devolve o caminho final.
     Garante que o clipe tenha no mínimo 1 minuto de duração.
     """
     seg = transcript[highlight["idx"]]
-    Path(out_dir).mkdir(exist_ok=True)
+    
+    # Configurações de otimização padrão
+    if optimization_config is None:
+        optimization_config = {
+            "use_gpu": True,
+            "quality": "balanced",
+            "enable_parallel": True
+        }
+    
+    # Mostra informações de otimização
+    print_optimization_info()
+    
+    # Se video_info foi fornecido, cria diretório específico para o vídeo
+    if video_info:
+        video_dir = create_video_directory(out_dir, video_info)
+    else:
+        video_dir = Path(out_dir)
+        video_dir.mkdir(exist_ok=True)
 
     clip = mp.VideoFileClip(video_path)
     video_duration = clip.duration
@@ -336,7 +484,7 @@ def make_clip(
     # Define início e fim do corte
     start = seg["start"]
     end = seg["end"]
-    min_duration = 70  # 1 minuto
+    min_duration = 61  # 1 minuto e 1 segundo
     if end - start < min_duration:
         end = min(start + min_duration, video_duration)
 
@@ -388,12 +536,14 @@ def make_clip(
     except Exception as e:
         font_path = "Arial"
     
-    print(f"Processando {len(transcript)} segmentos de texto...")
-    for i, segm in enumerate(transcript):
-        # Só inclui legendas dentro do corte
-        if segm["end"] <= start or segm["start"] >= end:
-            print(f"Segmento {i} fora do corte: {segm['start']:.2f}s -> {segm['end']:.2f}s")
-            continue
+    # Filtra apenas segmentos dentro do corte para otimizar
+    relevant_segments = [
+        segm for segm in transcript 
+        if not (segm["end"] <= start or segm["start"] >= end)
+    ]
+    
+    print(f"Processando {len(relevant_segments)} segmentos relevantes...")
+    for i, segm in enumerate(relevant_segments):
             
         seg_start = max(segm["start"], start) - start
         seg_end = min(segm["end"], end) - start
@@ -455,19 +605,27 @@ def make_clip(
                                 size=(final_width, final_height))
 
     safe_hook = sanitize_filename(highlight['hook'])
-    outfile = Path(out_dir) / f"{safe_hook}.mp4"
+    outfile = video_dir / f"{safe_hook}.mp4"
 
-    final.write_videofile(str(outfile), 
-        codec="libx264", 
-        fps=30, 
-        preset="ultrafast",
-        ffmpeg_params=[
-            "-profile:v", "main", 
-            "-pix_fmt", "yuv420p",
-            "-vf", "format=yuv420p"
-        ],
-        audio_codec="aac"
+    # Usa parâmetros otimizados
+    write_params = create_optimized_write_params(
+        use_gpu=optimization_config["use_gpu"],
+        quality=optimization_config["quality"]
     )
+    
+    print(f"🎬 Renderizando com otimizações: {write_params['codec']}")
+    
+    try:
+        final.write_videofile(str(outfile), **write_params)
+    except Exception as e:
+        if "h264_amf" in str(write_params.get('codec', '')) and "Invalid argument" in str(e):
+            print("⚠️ Erro no codec AMD, usando fallback para CPU...")
+            fallback_params = create_fallback_params()
+            print(f"🔄 Renderizando com fallback: {fallback_params['codec']}")
+            final.write_videofile(str(outfile), **fallback_params)
+        else:
+            # Re-raise se não for erro de codec AMD
+            raise e
 
     clip.close()
     final.close()
