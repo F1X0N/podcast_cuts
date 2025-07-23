@@ -10,6 +10,8 @@ Sistema automatizado para criar e publicar cortes de podcasts no YouTube, utiliz
 - Geração de miniaturas personalizadas com DALL-E
 - Edição automática de vídeos para formato vertical (Shorts)
 - Upload automático para YouTube
+- Sistema de checkpoints para retomada de processamento
+- Processamento em lote de múltiplos vídeos
 
 ## Requisitos
 
@@ -70,39 +72,88 @@ Para o YouTube, você precisa:
 3. Criar credenciais OAuth 2.0
 4. Baixar o arquivo `client_secret.json` e colocá-lo na raiz do projeto
 
+**Exemplo de configuração do YouTube:**
+O arquivo `client_secret.example.json` mostra a estrutura necessária. Copie-o para `client_secret.json` e preencha com suas credenciais reais.
+
 ## Configuração
 
-As configurações do projeto podem ser ajustadas no arquivo `config.yaml`:
+As configurações do projeto são definidas no arquivo `config.json`:
 
-```yaml
-paths:
-  raw: raw          # Pasta para vídeos originais
-  clips: clips      # Pasta para os cortes gerados
-whisper_size: base  # Tamanho do modelo de transcrição (tiny/base/small/medium)
-highlights: 3       # Número de cortes por episódio
-tags: ["podcast", "cortes", "clipverso"]
-upload_mode: true     # true = realiza upload para o youtube
-
-openai_models:
-  highlighter: gpt-4o
-  editor: gpt-4o
-  thumbnail: dall-e-3
-
-# Configurações de otimização de vídeo
-video_optimization:
-  use_gpu: true          # true = usa GPU AMD se disponível
-  quality: balanced       # fast, balanced, high
-  enable_parallel: true   # true = processamento paralelo quando possível
-
-# Configurações de outros
-append_outro: true        # true = anexa outro ao final de cada corte
-content_speed: 1.25       # velocidade do conteúdo principal (1.0 = normal, 1.25 = 25% mais rápido)
-
-# Configurações de upload
-upload_delay:
-  min_seconds: 3600       # Delay mínimo entre uploads (1 hora)
-  max_seconds: 5400       # Delay máximo entre uploads (1.5 horas)
+```json
+{
+    "pattern_video_configuration": {
+        "tags": ["cortes", "fy", "foryou", "clipverso-ofc"],
+        "highlights": 1,
+        "append_outro": true,
+        "content_speed": 1.25,
+        "preserve_pitch": true,
+        "video_duration": 61
+    },
+    "video_configuration": [
+        {
+            "input_url": "https://www.youtube.com/watch?v=VIDEO_ID",
+            "tags": ["cortes", "clipverso", "foryou"],
+            "highlights": 1,
+            "append_outro": true,
+            "content_speed": 1.25,
+            "preserve_pitch": true,
+            "video_duration": 61
+        },
+        {
+            "input_url": "https://www.youtube.com/watch?v=OUTRO_VIDEO_ID",
+            "pattern_video_configuration": true
+        }
+    ],
+    "system_configuration": {
+        "upload_mode": false,
+        "upload_delay": {
+            "min_seconds": 1800,
+            "max_seconds": 3600
+        },
+        "video_optimization": {
+            "use_gpu": true,
+            "quality": "balanced",
+            "enable_parallel": true
+        },
+        "paths": {
+            "raw": "raw",
+            "clips": "clips"
+        },
+        "whisper_size": "base",
+        "openai_models": {
+            "highlighter": "o3",
+            "editor": "o3",
+            "thumbnail": "dall-e-3"
+        }
+    }
+}
 ```
+
+### Estrutura da Configuração
+
+#### `pattern_video_configuration`
+Configurações padrão aplicadas a todos os vídeos:
+- **tags**: Tags padrão para todos os cortes
+- **highlights**: Número de cortes por episódio
+- **append_outro**: Se deve anexar outro ao final
+- **content_speed**: Velocidade do conteúdo (1.25 = 25% mais rápido)
+- **preserve_pitch**: Manter tom da voz original
+- **video_duration**: Duração final em segundos
+
+#### `video_configuration`
+Lista de vídeos para processar:
+- **input_url**: URL do vídeo do YouTube
+- **pattern_video_configuration**: `true` para usar apenas configurações padrão
+- Outras configurações específicas sobrescrevem o padrão
+
+#### `system_configuration`
+Configurações do sistema:
+- **upload_mode**: `true` para fazer upload real, `false` para simular
+- **upload_delay**: Delay entre uploads (em segundos)
+- **video_optimization**: Configurações de otimização
+- **paths**: Diretórios de trabalho
+- **whisper_size**: Tamanho do modelo Whisper
+- **openai_models**: Modelos OpenAI a usar
 
 ### ⚡ Configurações de Velocidade
 
@@ -155,7 +206,7 @@ O sistema calcula automaticamente a duração original necessária para atingir 
 
 Se você notar que a voz ficou muito fina ou grave após acelerar o vídeo:
 
-1. **Verifique a configuração**: Certifique-se de que `preserve_pitch: true` no `config.yaml`
+1. **Verifique a configuração**: Certifique-se de que `preserve_pitch: true` no `config.json`
 2. **Reduza a velocidade**: Use `content_speed: 1.25` em vez de valores maiores
 3. **Limite de velocidade**: A preservação de pitch funciona até 2x de velocidade
 4. **FFmpeg necessário**: Certifique-se de que o FFmpeg está instalado no sistema
@@ -164,27 +215,29 @@ Se você notar que a voz ficou muito fina ou grave após acelerar o vídeo:
 
 O sistema inclui um delay aleatório entre uploads para evitar detecção de automação:
 
-- **min_seconds**: Tempo mínimo de espera (padrão: 3600s = 1 hora)
-- **max_seconds**: Tempo máximo de espera (padrão: 5400s = 1.5 horas)
+- **min_seconds**: Tempo mínimo de espera (padrão: 1800s = 30 minutos)
+- **max_seconds**: Tempo máximo de espera (padrão: 3600s = 1 hora)
 
 Para desabilitar o delay, configure ambos como `0`:
-```yaml
-upload_delay:
-  min_seconds: 0
-  max_seconds: 0
+```json
+"upload_delay": {
+    "min_seconds": 0,
+    "max_seconds": 0
+}
 ```
 
 ## Uso
 
-O sistema agora funciona em duas etapas separadas para maior robustez:
+O sistema funciona em duas etapas separadas para maior robustez:
 
 ### 1. 🎬 Geração de Cortes
 ```bash
-poetry run python main.py "URL_DO_PODCAST"
+poetry run python main.py
 ```
 
 O sistema irá:
-- Baixar o vídeo
+- Processar todos os vídeos configurados no `config.json`
+- Baixar os vídeos
 - Transcrever o áudio
 - Selecionar os melhores momentos
 - Criar os cortes com legendas
@@ -208,13 +261,6 @@ python check_status.py
 ```
 
 Mostra o status atual do sistema e próximos passos.
-
-### ⚡ Testar Configuração de Velocidade
-```bash
-python test_speed.py
-```
-
-Mostra a configuração atual de velocidade e como alterá-la.
 
 ## Sistema de Checkpoints
 
@@ -245,20 +291,21 @@ podcast-cuts/
 │   └── Nome_do_Video/  # Diretório específico por vídeo
 │       ├── corte1.mp4
 │       ├── corte1_com_outro.mp4  # Corte com outro anexado
-│       ├── corte1_metadata.json
+│       ├── corte1_metadata.txt
 │       ├── corte2.mp4
-│       └── corte2_metadata.json
+│       └── corte2_metadata.txt
 ├── raw/           # Vídeos originais
 ├── logs/          # Logs de erros e custos
 ├── modules/       # Módulos do sistema
 ├── fonts/         # Fontes para legendas
-├── config.yaml    # Configurações
+├── config.json    # Configurações
 ├── .env           # Variáveis de ambiente
+├── molde.png      # Molde para outros
+├── logo.png       # Logo do ClipVerso
 ├── main.py        # Script principal
 ├── generate_outros.py  # Gerador de outros
-├── test_outros.py      # Teste do sistema de outros
 ├── list_clips.py  # Lista vídeos processados
-└── copy_metadata.py # Copia metadados para área de transferência
+└── upload_clips.py # Upload para YouTube
 ```
 
 ## Sistema de Outros
@@ -280,15 +327,10 @@ O ClipVerso inclui um sistema automatizado de outros que adiciona um call-to-act
    python generate_outros.py
    ```
 
-2. **Testar Sistema**:
-   ```bash
-   python test_outros.py
-   ```
-
-3. **Configurar** (opcional):
-   ```yaml
-   # config.yaml
-   append_outro: true  # true = anexa outro automaticamente
+2. **Configurar** (opcional):
+   ```json
+   // config.json
+   "append_outro": true  // true = anexa outro automaticamente
    ```
 
 ### 📁 Arquivos Gerados
@@ -305,66 +347,7 @@ O sistema automaticamente:
 - Mantém o corte original como backup
 - Gera arquivo `corte_com_outro.mp4` para upload
 
-## Sistema de Checkpoint
-
-O sistema implementa um mecanismo robusto de checkpoint para permitir a retomada de processamento interrompido e evitar conflitos em execuções paralelas.
-
-### 🔄 Funcionalidades do Checkpoint
-
-- **Retomada de Processamento**: Se o script for interrompido, pode continuar de onde parou
-- **Validação de URL**: Verifica se o checkpoint pertence ao episódio correto
-- **Segurança em Paralelo**: Evita que execuções paralelas usem checkpoints de outros episódios
-- **Validação de Arquivos**: Confirma se os arquivos de vídeo ainda existem
-
-### 🛡️ Validações Implementadas
-
-1. **Existência do Arquivo**: Verifica se o arquivo `checkpoint.json` existe
-2. **URL do Episódio**: Compara a URL do checkpoint com a URL atual
-3. **Arquivo de Vídeo**: Confirma se o arquivo de vídeo referenciado ainda existe
-4. **Integridade JSON**: Valida se o arquivo JSON está correto
-
-### 📝 Estrutura do Checkpoint
-
-```json
-{
-  "video_path": "raw/VIDEO_ID.mp4",
-  "highlight": {
-    "idx": 1,
-    "hook": "Título do corte",
-    "tags": ["tag1", "tag2"]
-  },
-  "transcript": [...],
-  "video_info": {...},
-  "episode_url": "https://www.youtube.com/watch?v=VIDEO_ID",
-  "created_at": "2024-01-01 12:00:00"
-}
-```
-
-### ⚠️ Comportamento em Execuções Paralelas
-
-- Se duas instâncias do script rodarem simultaneamente com URLs diferentes, cada uma terá seu próprio checkpoint
-- O sistema automaticamente detecta e rejeita checkpoints de outros episódios
-- Mensagens claras indicam quando um checkpoint é rejeitado e por quê
-
 ## Scripts Utilitários
-
-### Gerar Outros do ClipVerso
-Para gerar os outros padronizados do canal:
-```bash
-python generate_outros.py
-```
-
-Este script cria 3 variações de outros com:
-- TTS em português brasileiro
-- Animações baseadas no molde do ClipVerso
-- Textos engajantes ("Curtiu? Deixa o like 👍", etc.)
-- Duração de 5 segundos, formato 1080x1920
-
-### Testar Sistema de Outros
-Para validar se os outros estão funcionando:
-```bash
-python test_outros.py
-```
 
 ### Verificar Status do Sistema
 Para verificar o status atual e próximos passos:
@@ -378,43 +361,55 @@ Para ver todos os vídeos processados e seus cortes:
 python list_clips.py
 ```
 
-### Copiar Metadados
-Para copiar os metadados de um corte específico para a área de transferência:
+### Gerenciar Token do YouTube
+Para gerenciar autenticação do YouTube:
 ```bash
-python copy_metadata.py "Nome_do_Video" "Titulo_do_Corte"
+python manage_token.py status    # Verifica status do token
+python manage_token.py test      # Testa autenticação
+python manage_token.py clear     # Remove token cache
+python manage_token.py auth      # Força nova autenticação
 ```
 
-**Exemplo:**
+### Limpar Arquivos Temporários
+Para limpar arquivos temporários que podem causar problemas:
 ```bash
-python copy_metadata.py "Podcast_Flow_123" "Momentos_Incriveis"
+python cleanup_temp_files.py
 ```
 
-Isso copiará título, descrição, tags e informações do vídeo original para facilitar o uso em outras redes sociais.
-
-### Testar Validação de Checkpoint
-Para testar o sistema de validação de checkpoint:
+### Gerar Outros do ClipVerso
+Para gerar os outros padronizados do canal:
 ```bash
-python test_checkpoint_validation.py
+python generate_outros.py
 ```
 
-Este script demonstra como o sistema valida checkpoints para evitar conflitos em execuções paralelas.
+Este script cria 3 variações de outros com:
+- TTS em português brasileiro
+- Animações baseadas no molde do ClipVerso
+- Textos engajantes ("Curtiu? Deixa o like 👍", etc.)
+- Duração de 5 segundos, formato 1080x1920
 
-### Testar Otimizações
-Para testar e configurar as otimizações de vídeo:
+**Atualizar Outros:**
+Para atualizar os outros com versões melhoradas:
 ```bash
-python test_optimization.py
+python update_outros.py
 ```
 
-Para executar benchmark completo:
-```bash
-python test_optimization.py --benchmark
-```
+Este script faz backup dos outros antigos e gera novos com animações aprimoradas.
 
-### Testar Codec AMD
-Para testar especificamente o codec AMD:
-```bash
-python test_amd_codec.py
-```
+**Gerador de Outros Melhorado:**
+O arquivo `generate_outros_enhanced.py` contém uma versão avançada do gerador com:
+- Animações mais fluidas e criativas
+- Efeitos visuais aprimorados
+- Sincronização perfeita com TTS
+- Partículas e elementos flutuantes
+- Logo animado com efeitos
+
+### Exemplo de API REST
+O arquivo `api_example.py` demonstra como seria uma futura API REST para o sistema, incluindo:
+- Endpoints para processamento de vídeos
+- Sistema de jobs assíncronos
+- Validação de payload
+- Monitoramento de status
 
 ## Otimizações de Performance
 
@@ -423,7 +418,7 @@ O sistema inclui várias otimizações para acelerar o processamento:
 ### 🚀 Aceleração por GPU AMD
 - Detecta automaticamente GPUs AMD
 - Usa codec `h264_amf` para aceleração por hardware
-- Configurável via `config.yaml`
+- Configurável via `config.json`
 
 ### ⚡ Otimizações de CPU
 - Presets otimizados do FFmpeg
@@ -435,12 +430,13 @@ O sistema inclui várias otimizações para acelerar o processamento:
 - **balanced**: Equilíbrio entre velocidade e qualidade
 - **high**: Melhor qualidade, velocidade reduzida
 
-### 📊 Configuração no config.yaml
-```yaml
-video_optimization:
-  use_gpu: true          # Usa GPU AMD se disponível
-  quality: balanced       # fast, balanced, high
-  enable_parallel: true   # Processamento paralelo
+### 📊 Configuração no config.json
+```json
+"video_optimization": {
+    "use_gpu": true,          // Usa GPU AMD se disponível
+    "quality": "balanced",     // fast, balanced, high
+    "enable_parallel": true    // Processamento paralelo
+}
 ```
 
 ## Logs e Monitoramento
@@ -458,31 +454,40 @@ video_optimization:
 - pillow: Processamento de imagens
 - opencv-python: Processamento de vídeo
 
+**Gerenciamento de Dependências:**
+- `pyproject.toml`: Configuração do Poetry e dependências
+- `poetry.lock`: Versões exatas das dependências (não edite manualmente)
+- `requirements.txt`: Dependências para instalação sem Poetry
+
 ## Solução de Problemas
 
-1. Erro no ImageMagick:
+1. **Erro no ImageMagick**:
    - Verifique se o caminho no `moviepy_config.py` está correto
    - Execute `python install_imagemagick.py` novamente
 
-2. Erro na API do YouTube:
+2. **Erro na API do YouTube**:
    - Verifique se o `client_secret.json` está presente
    - Confirme se as credenciais têm permissão para upload
+   - Use `python manage_token.py auth` para reautenticar
 
-3. Erro na API OpenAI:
+3. **Erro na API OpenAI**:
    - Verifique se a chave API está correta no `.env`
    - Confirme se tem créditos suficientes
 
-4. **Erro no codec AMD (h264_amf):**
-   - Execute `python test_amd_codec.py` para diagnosticar
+4. **Erro no codec AMD (h264_amf)**:
    - Se o codec falhar, o sistema automaticamente usa fallback para CPU
-   - Para desabilitar GPU AMD, configure `use_gpu: false` no `config.yaml`
+   - Para desabilitar GPU AMD, configure `use_gpu: false` no `config.json`
    - Verifique se o FFmpeg tem suporte AMD instalado
 
-5. **Processamento muito lento:**
-   - Configure `quality: fast` no `config.yaml`
+5. **Processamento muito lento**:
+   - Configure `quality: fast` no `config.json`
    - Reduza `highlights` para 1
    - Use `whisper_size: tiny`
    - Feche outros programas durante o processamento
+
+6. **Arquivos temporários causando problemas**:
+   - Execute `python cleanup_temp_files.py` para limpar
+   - Reinicie o sistema se necessário
 
 ## Contribuindo
 
@@ -491,6 +496,19 @@ video_optimization:
 3. Commit suas mudanças (`git commit -am 'Adiciona nova feature'`)
 4. Push para a branch (`git push origin feature/nova-feature`)
 5. Crie um Pull Request
+
+## Arquivos Ignorados pelo Git
+
+O arquivo `.gitignore` configura quais arquivos não são versionados:
+
+- **Credenciais**: `.env`, `client_secret.json`, `token.json`
+- **Ambiente virtual**: `venv/`
+- **Cache Python**: `__pycache__/`, `*.pyc`
+- **Mídia**: `raw/`, `clips/`
+- **Logs**: `logs/`, `*.log`
+- **Sistema**: `.DS_Store`, `Thumbs.db`
+
+**Importante**: Nunca commite arquivos com credenciais reais. Use sempre os arquivos de exemplo.
 
 ## Licença
 
