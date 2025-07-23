@@ -96,12 +96,69 @@ video_optimization:
 
 # Configurações de outros
 append_outro: true        # true = anexa outro ao final de cada corte
+content_speed: 1.25       # velocidade do conteúdo principal (1.0 = normal, 1.25 = 25% mais rápido)
 
 # Configurações de upload
 upload_delay:
   min_seconds: 3600       # Delay mínimo entre uploads (1 hora)
   max_seconds: 5400       # Delay máximo entre uploads (1.5 horas)
 ```
+
+### ⚡ Configurações de Velocidade
+
+O sistema permite controlar a velocidade do conteúdo principal dos shorts:
+
+- **content_speed**: Velocidade do conteúdo (padrão: 1.25x = 25% mais rápido)
+  - `1.0` = velocidade normal
+  - `1.25` = 25% mais rápido (padrão recomendado)
+  - `1.5` = 50% mais rápido
+  - `0.8` = 20% mais lento
+
+**Nota**: A velocidade é aplicada ao conteúdo principal do short, e as legendas são automaticamente sincronizadas para acompanhar o áudio acelerado.
+
+### 🎯 Como Funciona a Sincronização
+
+Quando você configura `content_speed: 1.25`, o sistema:
+
+1. **Calcula duração necessária**: Para 61s finais com 1.25x, precisa de 76.25s originais
+2. **Ajusta o corte**: Estende ou reduz o corte para atingir a duração desejada
+3. **Acelera o vídeo**: Aplica velocidade 1.25x ao conteúdo
+4. **Ajusta legendas**: Recalcula todos os tempos das legendas proporcionalmente
+5. **Mantém sincronização**: Áudio e texto permanecem perfeitamente alinhados
+
+**Exemplo**: Para um vídeo final de 61s com velocidade 1.25x:
+- Duração original necessária: 61 × 1.25 = 76.25s
+- Após aceleração: 76.25s ÷ 1.25 = 61s (objetivo atingido)
+
+### 🎵 Preservação de Pitch
+
+O sistema pode acelerar o vídeo mantendo o pitch original da voz:
+
+- **preserve_pitch: true** (padrão): Mantém o tom da voz original
+- **preserve_pitch: false**: Altera o pitch junto com a velocidade (voz fica mais fina/grave)
+
+**Limitações**: A preservação de pitch funciona até 2x de velocidade. Acima disso, o sistema automaticamente usa o método padrão.
+
+### ⏱️ Configuração de Duração
+
+O sistema calcula automaticamente a duração original necessária para atingir a duração final desejada:
+
+- **video_duration**: Duração final do corte em segundos (padrão: 61s)
+- **Cálculo automático**: `duração_original = video_duration × content_speed`
+
+**Exemplos**:
+- Para 61s finais com 1.25x: precisa de 76.25s originais
+- Para 45s finais com 1.5x: precisa de 67.5s originais
+- Para 90s finais com 1.0x: precisa de 90s originais
+
+### 🎤 Problema: Voz Fina/Grave
+
+Se você notar que a voz ficou muito fina ou grave após acelerar o vídeo:
+
+1. **Verifique a configuração**: Certifique-se de que `preserve_pitch: true` no `config.yaml`
+2. **Reduza a velocidade**: Use `content_speed: 1.25` em vez de valores maiores
+3. **Limite de velocidade**: A preservação de pitch funciona até 2x de velocidade
+4. **FFmpeg necessário**: Certifique-se de que o FFmpeg está instalado no sistema
 
 ### ⏰ Configurações de Upload
 
@@ -119,20 +176,64 @@ upload_delay:
 
 ## Uso
 
-1. Coloque a URL do podcast no arquivo `input_url.txt` ou use como argumento:
+O sistema agora funciona em duas etapas separadas para maior robustez:
+
+### 1. 🎬 Geração de Cortes
 ```bash
 poetry run python main.py "URL_DO_PODCAST"
 ```
 
-2. O sistema irá:
-   - Baixar o vídeo
-   - Criar um diretório específico para o vídeo baseado no título
-   - Salvar os cortes e metadados organizadamente
-   - Transcrever o áudio
-   - Selecionar os melhores momentos
-   - Gerar miniaturas
-   - Criar os cortes
-   - Fazer upload para o YouTube (se test_mode = false)
+O sistema irá:
+- Baixar o vídeo
+- Transcrever o áudio
+- Selecionar os melhores momentos
+- Criar os cortes com legendas
+- Anexar outros (se configurado)
+- Salvar checkpoint para upload posterior
+
+### 2. 📤 Upload para YouTube
+```bash
+poetry run python upload_clips.py
+```
+
+O sistema irá:
+- Carregar checkpoint de upload
+- Fazer upload de cada corte
+- Respeitar delays configurados
+- Gerar relatório de sucesso/falhas
+
+### 🔍 Verificar Status
+```bash
+python check_status.py
+```
+
+Mostra o status atual do sistema e próximos passos.
+
+### ⚡ Testar Configuração de Velocidade
+```bash
+python test_speed.py
+```
+
+Mostra a configuração atual de velocidade e como alterá-la.
+
+## Sistema de Checkpoints
+
+O sistema implementa checkpoints robustos para garantir que nenhum progresso seja perdido:
+
+### 🔄 Checkpoint de Processamento
+- Salvo durante a geração de cada corte
+- Permite retomar processamento interrompido
+- Valida URL do episódio para evitar conflitos
+
+### 📤 Checkpoint de Upload
+- Salvo após geração de todos os cortes
+- Contém informações de todos os cortes prontos
+- Permite upload posterior com delays configurados
+
+### 🛡️ Recuperação de Falhas
+- **Queda de energia**: Retoma do último checkpoint
+- **Erro de upload**: Mantém checkpoint para retry
+- **Processamento interrompido**: Continua de onde parou
 
 ## Estrutura de Diretórios
 
@@ -263,6 +364,12 @@ Este script cria 3 variações de outros com:
 Para validar se os outros estão funcionando:
 ```bash
 python test_outros.py
+```
+
+### Verificar Status do Sistema
+Para verificar o status atual e próximos passos:
+```bash
+python check_status.py
 ```
 
 ### Listar Vídeos Processados

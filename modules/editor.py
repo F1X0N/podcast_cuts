@@ -452,7 +452,10 @@ def make_clip(
         transcript: list,
         out_dir: str = "clips",
         video_info: dict = None,
-        optimization_config: dict = None
+        optimization_config: dict = None,
+        content_speed: float = 1.25,
+        preserve_pitch: bool = True,
+        cutting_duration: int = 61
     ) -> Path:
     """
     Recorta, converte para vertical 9:16, gera legendas dinâmicas estilizadas e devolve o caminho final.
@@ -484,12 +487,96 @@ def make_clip(
     # Define início e fim do corte
     start = seg["start"]
     end = seg["end"]
-    min_duration = 70  # 1 minuto e 10 segundos
+    min_duration = cutting_duration*content_speed  # 1 minuto e 1 segundos
     if end - start < min_duration:
         end = min(start + min_duration, video_duration)
 
     # Recorta o trecho
     clip = clip.subclip(start, end)
+    
+    # Aplica velocidade configurável ao conteúdo do short
+    original_duration = end - start
+    if content_speed != 1.0:
+        if preserve_pitch and content_speed <= 2.0:  # FFmpeg atempo tem limite de 2x
+            # Separa áudio e vídeo para processar separadamente
+            video_clip = clip.without_audio()
+            audio_clip = clip.audio
+            
+            # Acelera apenas o vídeo
+            video_clip = video_clip.speedx(content_speed)
+            
+            # Processa o áudio para manter o pitch original
+            if audio_clip is not None:
+                try:
+                    # Usa FFmpeg diretamente no áudio do clip
+                    import tempfile
+                    import subprocess
+                    
+                    # Cria arquivo temporário para o áudio
+                    with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as temp_audio:
+                        temp_audio_path = temp_audio.name
+                    
+                    # Salva o áudio original
+                    audio_clip.write_audiofile(temp_audio_path, verbose=False, logger=None)
+                    
+                    # Cria arquivo temporário para o áudio processado
+                    with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as temp_audio_fast:
+                        temp_audio_fast_path = temp_audio_fast.name
+                    
+                    # Usa FFmpeg para acelerar mantendo pitch
+                    cmd = [
+                        'ffmpeg', '-y',  # Sobrescreve arquivo de saída
+                        '-i', temp_audio_path,
+                        '-filter:a', f'atempo={content_speed}',
+                        '-ar', '44100',  # Taxa de amostragem
+                        temp_audio_fast_path
+                    ]
+                    
+                    subprocess.run(cmd, check=True, capture_output=True)
+                    
+                    # Carrega o áudio processado
+                    audio_fast = mp.AudioFileClip(temp_audio_fast_path)
+                    
+                    # Combina vídeo acelerado com áudio processado
+                    clip = video_clip.set_audio(audio_fast)
+                    
+                    print(f"⚡ Velocidade aplicada: {content_speed}x (pitch preservado)")
+                    print(f"   • Duração original: {original_duration:.2f}s -> nova: {clip.duration:.2f}s")
+                    
+                except Exception as e:
+                    print(f"⚠️ Erro ao processar áudio com FFmpeg: {e}")
+                    print("   • Usando método padrão (pitch será alterado)")
+                    clip = clip.speedx(content_speed)
+                finally:
+                    # Limpa arquivos temporários de forma mais robusta
+                    import os
+                    import time
+                    
+                    # Aguarda um pouco para garantir que os arquivos foram liberados
+                    time.sleep(0.2)
+                    
+                    for temp_file in [temp_audio_path, temp_audio_fast_path]:
+                        try:
+                            if os.path.exists(temp_file):
+                                os.unlink(temp_file)
+                        except (PermissionError, OSError):
+                            # Se não conseguir deletar, não é crítico
+                            pass
+            else:
+                # Se não há áudio, apenas acelera o vídeo
+                clip = video_clip
+                print(f"⚡ Velocidade aplicada: {content_speed}x (vídeo sem áudio)")
+        else:
+            # Método padrão (altera pitch)
+            clip = clip.speedx(content_speed)
+            pitch_status = "pitch alterado" if not preserve_pitch else "pitch alterado (velocidade > 2x)"
+            print(f"⚡ Velocidade aplicada: {content_speed}x ({pitch_status})")
+            print(f"   • Duração original: {original_duration:.2f}s -> nova: {clip.duration:.2f}s")
+        
+        new_duration = clip.duration
+    else:
+        new_duration = original_duration
+        print(f"⚡ Velocidade normal: 1.0x (duração: {original_duration:.2f}s)")
 
     # Define dimensões finais do template
     final_width = 1080
@@ -545,16 +632,22 @@ def make_clip(
     print(f"Processando {len(relevant_segments)} segmentos relevantes...")
     for i, segm in enumerate(relevant_segments):
             
-        seg_start = max(segm["start"], start) - start
-        seg_end = min(segm["end"], end) - start
+        # Calcula tempos originais do segmento
+        seg_start_original = max(segm["start"], start) - start
+        seg_end_original = min(segm["end"], end) - start
+        
+        # Ajusta tempos para a velocidade aplicada
+        seg_start = seg_start_original / content_speed
+        seg_end = seg_end_original / content_speed
+        
         txt = segm["text"]
         
-        print(f"Processando segmento {i}: {seg_start:.2f}s -> {seg_end:.2f}s")
+        print(f"Processando segmento {i}: {seg_start_original:.2f}s -> {seg_end_original:.2f}s (ajustado: {seg_start:.2f}s -> {seg_end:.2f}s)")
         
         # Segmenta o texto em partes menores
         segmentos = segment_text(txt, max_chars=20)
         
-        # Calcula a duração total do segmento de áudio
+        # Calcula a duração total do segmento de áudio (ajustada)
         duracao_total = seg_end - seg_start
         
         # Calcula a duração de cada subsegmento baseado no número de caracteres
@@ -563,13 +656,13 @@ def make_clip(
         
         for j, segmento in enumerate(segmentos):
             # Calcula a duração proporcional ao tamanho do texto
-            duracao_segmento = (len(segmento) * duracao_base) * 1
+            duracao_segmento = len(segmento) * duracao_base
             
-            # Calcula o tempo de início e fim para cada subsegmento
+            # Calcula o tempo de início e fim para cada subsegmento (ajustado)
             if j == 0:
                 subseg_start = seg_start
             else:
-                subseg_start = seg_start + sum(len(s) * duracao_base * 1 for s in segmentos[:j])
+                subseg_start = seg_start + sum(len(s) * duracao_base for s in segmentos[:j])
             
             subseg_end = subseg_start + duracao_segmento
 
@@ -632,3 +725,56 @@ def make_clip(
     template.close()
 
     return outfile
+
+def save_upload_checkpoint(out_dir: str, episode_url: str, generated_clips: list):
+    """
+    Salva checkpoint com informações de todos os cortes gerados para upload posterior
+    """
+    checkpoint_path = Path(out_dir) / "upload_checkpoint.json"
+    
+    checkpoint_data = {
+        "episode_url": episode_url,
+        "generated_clips": generated_clips,
+        "total_clips": len(generated_clips),
+        "created_at": str(Path().cwd() / "upload_checkpoint.json")
+    }
+    
+    with open(checkpoint_path, "w", encoding="utf-8") as f:
+        json.dump(checkpoint_data, f, indent=2, ensure_ascii=False)
+    
+    print(f"✅ Checkpoint de upload salvo: {checkpoint_path}")
+    print(f"   • {len(generated_clips)} cortes prontos para upload")
+    return checkpoint_path
+
+def load_upload_checkpoint(out_dir: str) -> dict:
+    """
+    Carrega checkpoint de upload se existir
+    """
+    checkpoint_path = Path(out_dir) / "upload_checkpoint.json"
+    
+    if not checkpoint_path.exists():
+        return None
+    
+    try:
+        with open(checkpoint_path, "r", encoding="utf-8") as f:
+            checkpoint_data = json.load(f)
+        
+        print(f"✅ Checkpoint de upload carregado: {checkpoint_path}")
+        print(f"   • {checkpoint_data['total_clips']} cortes encontrados")
+        return checkpoint_data
+        
+    except Exception as e:
+        print(f"❌ Erro ao carregar checkpoint de upload: {e}")
+        return None
+
+def clear_upload_checkpoint(out_dir: str):
+    """
+    Remove checkpoint de upload após conclusão
+    """
+    checkpoint_path = Path(out_dir) / "upload_checkpoint.json"
+    
+    if checkpoint_path.exists():
+        checkpoint_path.unlink()
+        print(f"✅ Checkpoint de upload removido: {checkpoint_path}")
+    else:
+        print("ℹ️ Nenhum checkpoint de upload encontrado para remover")

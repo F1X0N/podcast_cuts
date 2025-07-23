@@ -1,17 +1,19 @@
 # main.py
 """
-Pipeline completo: python main.py <URL_DO_EPISÓDIO>
+Pipeline de geração de cortes: python main.py <URL_DO_EPISÓDIO>
+Gera todos os cortes e salva checkpoint para upload posterior
 """
-import sys, yaml, os, time, random
+import sys, yaml, os
 from dotenv import load_dotenv
-from modules import downloader, transcriber, highlighter, editor, youtube_uploader, moviepy_patch, moviepy_config, outro_appender
+from modules import downloader, transcriber, highlighter, editor, moviepy_patch, moviepy_config, outro_appender
 from modules.llm_utils import print_llm_report, save_cost_log, save_error_log
 from modules.config import load_cfg
+from upload_clips import run_uploads
 
 from pathlib import WindowsPath
 
-# Aplica o patch do MoviePy
-moviepy_patch.patch_resize()
+# Aplica os patches do MoviePy
+moviepy_patch.apply_all_patches()
 
 load_dotenv()
 
@@ -41,6 +43,9 @@ def run(episode_url: str):
         print("Selecionando highlights…")
         hls = highlighter.find_highlights(transcript, video_info, cfg["highlights"])
 
+    # Lista para armazenar informações dos cortes gerados
+    generated_clips = []
+
     for h in hls:
         print(f"\nGerando corte: {h['hook']}")
         # Salva checkpoint antes de processar cada highlight, incluindo a URL do episódio
@@ -59,7 +64,10 @@ def run(episode_url: str):
             transcript, 
             cfg["paths"]["clips"], 
             video_info,
-            optimization_config
+            optimization_config,
+            cfg.get("content_speed", 1.25),
+            cfg.get("preserve_pitch", True),
+            cfg.get("video_duration", 61)
         )
         
         # Salva os metadados do corte
@@ -80,39 +88,31 @@ def run(episode_url: str):
                 print("   Continuando com o corte original...")
                 final_clip_path = clip_path
         
-        if not cfg.get("test_mode", False):
-            # Cria descrição com informações do vídeo original
-            original_title = video_info.get('title', 'Vídeo Original')
-            original_channel = video_info.get('channel', 'Canal Original')
-            
-            desc = f"""{h.get('description', h.get('hook', ''))}
-
-🎬 Trecho extraído do episódio: "{original_title}"
-📺 Canal original: {original_channel}"""
-            
-            tags_string = " #".join(all_tags)
-
-            desc += f"\n\n{tags_string}"
-
-            # Delay aleatório entre uploads para evitar detecção
-            upload_delay_config = cfg.get("upload_delay", {"min_seconds": 3600, "max_seconds": 5400})
-            random_time = random.randint(
-                upload_delay_config["min_seconds"], 
-                upload_delay_config["max_seconds"]
-            )
-            
-            print(f"⏳ Aguardando {random_time//60} minutos antes do upload...")
-            time.sleep(random_time)
-
-            youtube_uploader.upload(str(final_clip_path), h["hook"], desc, tags=all_tags)
-
-            print("✔️ Upload concluído")
-        else:
-            print(f"✔️ Modo de teste: corte gerado em {final_clip_path}")
+        # Armazena informações do corte para upload posterior
+        clip_info = {
+            "clip_path": str(final_clip_path),
+            "hook": h["hook"],
+            "description": h.get('description', h.get('hook', '')),
+            "tags": all_tags,
+            "video_info": video_info,
+            "episode_url": episode_url
+        }
+        generated_clips.append(clip_info)
+        
+        print(f"✅ Corte gerado: {final_clip_path}")
     
-    # Limpa o checkpoint após processar todos os highlights
+    # Salva checkpoint de conclusão com todos os cortes gerados
+    editor.save_upload_checkpoint(cfg["paths"]["clips"], episode_url, generated_clips)
+    
+    # Limpa o checkpoint de processamento
     editor.clear_checkpoint(cfg["paths"]["clips"])
-    print("\nProcessamento concluído!")
+    
+    print(f"\n🎉 Geração de cortes concluída!")
+    print(f"   • {len(generated_clips)} cortes gerados")
+    print(f"   • Checkpoint salvo para upload posterior")
+    print(f"   • Execute 'python upload_clips.py' para fazer upload")
+
+    run_uploads()
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:

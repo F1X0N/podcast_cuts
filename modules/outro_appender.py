@@ -121,7 +121,7 @@ class OutroAppender:
                 
                 # Aplica controle de volume simplificado
                 # Reduz volume da música para não competir com o áudio principal
-                background_music = background_music.volumex(0.06)  # 6% do volume
+                background_music = background_music.volumex(0.05)  # 6% do volume
                 
                 # Combina com o áudio original
                 final_audio = mp.CompositeAudioClip([final_clip.audio, background_music])

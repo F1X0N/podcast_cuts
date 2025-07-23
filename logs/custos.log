@@ -826,3 +826,9 @@
   total_brl: 0.006102
   total_usd: 0.0012204
   usd_brl: 5.0
+- data: '2025-07-23 16:17:36'
+  episodio: https://www.youtube.com/watch?v=lOp4Gl6wIzc
+  etapas: {}
+  total_brl: 0.0
+  total_usd: 0
+  usd_brl: 5.0

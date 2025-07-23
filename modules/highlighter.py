@@ -42,12 +42,14 @@ def find_highlights(transcript: list, video_info: dict = None, n: int = 3):
         
         INSTRUÇÕES:
         1. Considere o título e canal do vídeo original para criar títulos contextuais e chamativos;
-        2. Use tags que combinem com o tema do vídeo original + viralidade + hashtags;
+        2. Use tags que combinem com o tema do vídeo original + viralidade;
         3. Títulos devem ser chamativos e relacionados ao conteúdo do trecho;
-        4. Tags devem incluir palavras-chave do tema + termos virais + hashtags relevantes para divulgação em mídias sociais;
+        4. Tags devem incluir palavras-chave do tema + termos virais;
+            - Importante: Tags não devem conter hashtags.
         5. Crie uma breve descrição do trecho selecionado para ser usada no vídeo.
         6. O trecho, além de viral, deve ser relevante no vídeo original e ter a intenção de gerar o CTA (Call to Action) para o usuário comentar, curtir, compartilhar, etc.
-        
+        7. O trecho deve ser de no máximo 10 segundos.
+
         Responda APENAS com JSON: [{{"idx": <int>, "hook": "<título chamativo e contextual>", "tags": ["<tag1>", "<tag2>", ...], "description": "<descrição do trecho selecionado>"}}]
         
         Transcrição:
