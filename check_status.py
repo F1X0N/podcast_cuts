@@ -110,7 +110,7 @@ def show_speed_config():
     print(f"   • Duração original necessária: {original_duration_needed:.1f}s")
     print(f"   • Cálculo: {video_duration}s × {content_speed}x = {original_duration_needed:.1f}s")
     
-    print("\n💡 Para alterar: edite 'content_speed', 'preserve_pitch' e 'video_duration' no config.yaml")
+    print("\n💡 Para alterar: edite 'content_speed', 'preserve_pitch' e 'video_duration' no config.json")
     print("   • 1.0 = velocidade normal")
     print("   • 1.25 = 25% mais rápido (padrão)")
     print("   • 1.5 = 50% mais rápido")

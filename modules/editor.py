@@ -463,14 +463,6 @@ def make_clip(
     """
     seg = transcript[highlight["idx"]]
     
-    # Configurações de otimização padrão
-    if optimization_config is None:
-        optimization_config = {
-            "use_gpu": True,
-            "quality": "balanced",
-            "enable_parallel": True
-        }
-    
     # Mostra informações de otimização
     print_optimization_info()
     

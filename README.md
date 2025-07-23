@@ -81,7 +81,7 @@ paths:
 whisper_size: base  # Tamanho do modelo de transcrição (tiny/base/small/medium)
 highlights: 3       # Número de cortes por episódio
 tags: ["podcast", "cortes", "clipverso"]
-test_mode: true     # true = pula upload para YouTube
+upload_mode: true     # true = realiza upload para o youtube
 
 openai_models:
   highlighter: gpt-4o

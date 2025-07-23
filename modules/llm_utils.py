@@ -1,4 +1,5 @@
 import os
+import json
 import yaml
 import requests
 from openai import OpenAI
@@ -12,9 +13,22 @@ COST_LOG = os.path.join(LOG_DIR, "custos.log")
 ERROR_LOG = os.path.join(LOG_DIR, "erros.log")
 os.makedirs(LOG_DIR, exist_ok=True)
 
-# Carrega config.yaml
-with open("config.yaml", "r") as f:
-    CONFIG = yaml.safe_load(f)
+# Carrega configuração (JSON ou YAML como fallback)
+def load_config():
+    try:
+        # Tenta carregar JSON primeiro
+        with open("config.json", "r", encoding="utf-8") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        # Fallback para YAML (compatibilidade)
+        try:
+            with open("config.yaml", "r", encoding="utf-8") as f:
+                return yaml.safe_load(f)
+        except FileNotFoundError:
+            raise FileNotFoundError("Nenhum arquivo de configuração encontrado (config.json ou config.yaml)")
+
+# Carrega configuração global
+CONFIG = load_config()
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
@@ -74,7 +88,11 @@ def call_llm(role, messages=None, prompt=None, image=False, n=1, size=None, qual
     n, size, quality: parâmetros para imagem
     response_format: formato de resposta esperado (ex: {"type": "json_object"})
     """
-    model = CONFIG["openai_models"][role]
+    # Obtém modelo da configuração do sistema
+    system_config = CONFIG.get("system_configuration", {})
+    openai_models = system_config.get("openai_models", {})
+    model = openai_models.get(role, "gpt-4o")  # Fallback para gpt-4o
+    
     client = OpenAI(api_key=OPENAI_API_KEY)
     stats = LLM_STATS.setdefault(role, {"input": 0, "output": 0, "cache": 0, "usd": 0, "calls": 0})
     result = None

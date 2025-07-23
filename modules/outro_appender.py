@@ -54,14 +54,6 @@ class OutroAppender:
         if not self.outro_files:
             raise FileNotFoundError("Nenhum arquivo de outro disponível. Execute 'python generate_outros.py' primeiro.")
         
-        # Configurações de otimização padrão
-        if optimization_config is None:
-            optimization_config = {
-                "use_gpu": True,
-                "quality": "balanced",
-                "enable_parallel": True
-            }
-        
         input_path = Path(input_clip_path)
         if not input_path.exists():
             raise FileNotFoundError(f"Arquivo de entrada não encontrado: {input_clip_path}")

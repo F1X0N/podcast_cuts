@@ -1,13 +1,14 @@
 # main.py
 """
-Pipeline de geração de cortes: python main.py <URL_DO_EPISÓDIO>
+Pipeline de geração de cortes: python main.py
+Processa múltiplos vídeos baseado na configuração do config.json
 Gera todos os cortes e salva checkpoint para upload posterior
 """
-import sys, yaml, os
+import sys, json, os
 from dotenv import load_dotenv
 from modules import downloader, transcriber, highlighter, editor, moviepy_patch, moviepy_config, outro_appender
 from modules.llm_utils import print_llm_report, save_cost_log, save_error_log
-from modules.config import load_cfg
+from modules.config import load_cfg, process_payload_config
 from upload_clips import run_uploads
 
 from pathlib import WindowsPath
@@ -17,8 +18,15 @@ moviepy_patch.apply_all_patches()
 
 load_dotenv()
 
-def run(episode_url: str):
-    cfg = load_cfg()
+def process_single_video(episode_url: str, cfg: dict):
+    """
+    Processa um único vídeo com a configuração fornecida
+    """
+    print(f"\n🎬 Processando vídeo: {episode_url}")
+    print(f"   • Tags: {cfg.get('tags', [])}")
+    print(f"   • Highlights: {cfg.get('highlights', 1)}")
+    print(f"   • Velocidade: {cfg.get('content_speed', 1.25)}x")
+    print(f"   • Duração: {cfg.get('video_duration', 61)}s")
 
     # Tenta carregar checkpoint com validação da URL do episódio
     checkpoint = editor.validate_checkpoint_for_episode(cfg["paths"]["clips"], episode_url)
@@ -107,36 +115,62 @@ def run(episode_url: str):
     # Limpa o checkpoint de processamento
     editor.clear_checkpoint(cfg["paths"]["clips"])
     
-    print(f"\n🎉 Geração de cortes concluída!")
+    print(f"\n🎉 Processamento do vídeo concluído!")
     print(f"   • {len(generated_clips)} cortes gerados")
     print(f"   • Checkpoint salvo para upload posterior")
+    
+    return generated_clips
+
+def run():
+    """
+    Processa todos os vídeos configurados no payload
+    """
+    # Carrega configuração
+    payload = load_cfg()
+    
+    # Processa o payload para obter configurações de cada vídeo
+    video_configs = process_payload_config(payload)
+    
+    print(f"🚀 Iniciando processamento de {len(video_configs)} vídeo(s)")
+    print("=" * 60)
+    
+    all_generated_clips = []
+    
+    for i, video_cfg in enumerate(video_configs, 1):
+        try:
+            print(f"\n📹 Vídeo {i}/{len(video_configs)}")
+            print("-" * 40)
+            
+            episode_url = video_cfg["input_url"]
+            generated_clips = process_single_video(episode_url, video_cfg)
+            all_generated_clips.extend(generated_clips)
+            
+        except Exception as e:
+            import traceback
+            print(f"❌ Erro ao processar vídeo {i}: {e}")
+            save_error_log(traceback.format_exc(), video_cfg.get("input_url", "URL_DESCONHECIDA"))
+            continue
+    
+    print(f"\n🎉 Processamento completo!")
+    print(f"   • Total de vídeos processados: {len(video_configs)}")
+    print(f"   • Total de cortes gerados: {len(all_generated_clips)}")
     print(f"   • Execute 'python upload_clips.py' para fazer upload")
 
-    run_uploads()
+    # Executa uploads se configurado
+    if payload.get("system_configuration", {}).get("upload_mode", False):
+        print("\n📤 Iniciando uploads...")
+        run_uploads()
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        # Tenta ler a URL do arquivo input_url.txt
-        try:
-            with open("input_url.txt", "r", encoding="utf-8") as f:
-                lines = [line.strip() for line in f if line.strip() and not line.startswith("#")]
-                if lines:
-                    episode_url = lines[0]
-                else:
-                    sys.exit("Arquivo input_url.txt está vazio.")
-        except Exception:
-            sys.exit("Uso: python main.py <URL_DO_EPISÓDIO_PODCAST> ou preencha input_url.txt")
-    else:
-        episode_url = sys.argv[1]
     try:
-        run(episode_url)
+        run()
     except Exception as e:
         import traceback
-        save_error_log(traceback.format_exc(), episode_url)
+        save_error_log(traceback.format_exc(), "ERRO_GERAL")
         print("Erro durante o processamento. Veja logs/erros.log para detalhes.")
     finally:
         print_llm_report()
-        save_cost_log(episode_url)
+        save_cost_log("PROCESSAMENTO_MULTIPLO")
 
 import warnings
 warnings.filterwarnings("ignore", category=ResourceWarning)

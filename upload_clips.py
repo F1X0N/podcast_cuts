@@ -33,9 +33,9 @@ def run_uploads():
     # Configurações de delay
     upload_delay_config = cfg.get("upload_delay", {"min_seconds": 1800, "max_seconds": 3600})
     
-    if cfg.get("test_mode", False):
-        print("⚠️ MODO DE TESTE ATIVO - Uploads serão simulados")
-        print("   Configure test_mode: false no config.yaml para upload real")
+    if not cfg.get("upload_mode", False):
+        print("⚠️ MODO DE UPLOAD DESATIVADO - Uploads serão simulados")
+        print("   Configure upload_mode: true no config.json para upload real")
     
     uploaded_count = 0
     failed_count = 0
@@ -69,7 +69,7 @@ def run_uploads():
         desc += f"\n\n{tags_string}"
         
         try:
-            if not cfg.get("test_mode", False):
+            if cfg.get("upload_mode", True):
                 # Delay antes do upload (exceto para o primeiro)
                 if i > 1:
                     random_time = random.randint(
