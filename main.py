@@ -110,7 +110,7 @@ def process_single_video(episode_url: str, cfg: dict):
         print(f"✅ Corte gerado: {final_clip_path}")
     
     # Salva checkpoint de conclusão com todos os cortes gerados
-    editor.save_upload_checkpoint(cfg["paths"]["clips"], episode_url, generated_clips)
+    editor.save_upload_checkpoint(str(video_dir), episode_url, generated_clips)
     
     # Limpa o checkpoint de processamento
     editor.clear_checkpoint(cfg["paths"]["clips"])

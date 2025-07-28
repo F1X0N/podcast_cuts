@@ -3,27 +3,22 @@
         "tags": ["cortes", "fy", "foryou", "clipverso-ofc"],
         "highlights": 1,
         "append_outro": true,
-        "content_speed": 1.25,
+        "content_speed": 1.5,
         "preserve_pitch": true,
-        "video_duration": 61
+        "video_duration": 57
     },
     "video_configuration": [
         {
-            "input_url": "https://www.youtube.com/watch?v=FNFrpuUInvk",
-            "tags": ["cortes", "clipverso", "foryou", "clipverso-ofc"],
-            "highlights": 1,
-            "append_outro": true,
-            "content_speed": 1.25,
-            "preserve_pitch": true,
-            "video_duration": 61
+            "input_url": "https://www.youtube.com/watch?v=9NJZJq333bo",
+            "pattern_video_configuration": true
         },
         {
-            "input_url": "https://www.youtube.com/watch?v=5pB5cYziN6U",
+            "input_url": "https://www.youtube.com/watch?v=roEsX3yjba8",
             "pattern_video_configuration": true
         }
     ],
     "system_configuration": {
-        "upload_mode": false,
+        "upload_mode": true,
         "upload_delay": {
             "min_seconds": 1800,
             "max_seconds": 3600

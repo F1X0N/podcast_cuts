@@ -49,7 +49,7 @@ def save_clip_metadata(video_dir: Path, clip_filename: str, highlight: dict, vid
 🎬 Trecho extraído do episódio: "{original_title}"
 📺 Canal original: {original_channel}"""
 
-    tags_string = " #".join(all_tags)
+    tags_string = "#" + " #".join(all_tags)
     desc += f"\n\n{tags_string}"
     
     # Salva o arquivo de metadados
@@ -718,11 +718,22 @@ def make_clip(
 
     return outfile
 
-def save_upload_checkpoint(out_dir: str, episode_url: str, generated_clips: list):
+def get_upload_checkpoint_path(video_dir: str) -> Path:
+    """Retorna o caminho do arquivo de checkpoint de upload para o diretório do vídeo"""
+    return Path(video_dir) / "upload_checkpoint.json"
+
+def save_upload_checkpoint(video_dir: str, episode_url: str, generated_clips: list):
     """
     Salva checkpoint com informações de todos os cortes gerados para upload posterior
     """
-    checkpoint_path = Path(out_dir) / "upload_checkpoint.json"
+    checkpoint_path = get_upload_checkpoint_path(video_dir)
+    
+    # Adiciona campos de status de upload se não existirem
+    for clip in generated_clips:
+        if "uploaded" not in clip:
+            clip["uploaded"] = False
+        if "uploaded_at" not in clip:
+            clip["uploaded_at"] = None
     
     checkpoint_data = {
         "episode_url": episode_url,
@@ -738,11 +749,12 @@ def save_upload_checkpoint(out_dir: str, episode_url: str, generated_clips: list
     print(f"   • {len(generated_clips)} cortes prontos para upload")
     return checkpoint_path
 
-def load_upload_checkpoint(out_dir: str) -> dict:
+
+def load_upload_checkpoint(video_dir: str) -> dict:
     """
-    Carrega checkpoint de upload se existir
+    Carrega checkpoint de upload se existir para o diretório do vídeo
     """
-    checkpoint_path = Path(out_dir) / "upload_checkpoint.json"
+    checkpoint_path = get_upload_checkpoint_path(video_dir)
     
     if not checkpoint_path.exists():
         return None
@@ -750,21 +762,19 @@ def load_upload_checkpoint(out_dir: str) -> dict:
     try:
         with open(checkpoint_path, "r", encoding="utf-8") as f:
             checkpoint_data = json.load(f)
-        
         print(f"✅ Checkpoint de upload carregado: {checkpoint_path}")
         print(f"   • {checkpoint_data['total_clips']} cortes encontrados")
         return checkpoint_data
-        
     except Exception as e:
         print(f"❌ Erro ao carregar checkpoint de upload: {e}")
         return None
 
-def clear_upload_checkpoint(out_dir: str):
+
+def clear_upload_checkpoint(video_dir: str):
     """
-    Remove checkpoint de upload após conclusão
+    Remove checkpoint de upload após conclusão para o diretório do vídeo
     """
-    checkpoint_path = Path(out_dir) / "upload_checkpoint.json"
-    
+    checkpoint_path = get_upload_checkpoint_path(video_dir)
     if checkpoint_path.exists():
         checkpoint_path.unlink()
         print(f"✅ Checkpoint de upload removido: {checkpoint_path}")

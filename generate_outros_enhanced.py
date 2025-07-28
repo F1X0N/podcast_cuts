@@ -522,7 +522,7 @@ class EnhancedOutroGenerator:
                 model="tts-1",
                 voice="alloy",
                 input=script,
-                speed=1.2  # Aumenta velocidade em 20%
+                speed=1.5  # Aumenta velocidade em 20%
             )
             
             # Salva o áudio temporariamente
