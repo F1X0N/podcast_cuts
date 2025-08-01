@@ -326,9 +326,18 @@ def highlight_keywords(text: str) -> str:
     
     return ' '.join(highlighted_words)
 
-def create_template_clip(width: int, height: int, duration: float) -> mp.VideoClip:
+def create_template_clip(width: int, height: int, duration: float, video_format: str = "horizontal", 
+                        video_position: tuple = None, video_size: tuple = None) -> mp.VideoClip:
     """
     Cria um template com header e footer baseado no molde fornecido.
+    
+    Args:
+        width: Largura do template
+        height: Altura do template
+        duration: Duração do template
+        video_format: "horizontal", "vertical", ou "square" para ajustar proporções
+        video_position: (x, y) da posição do vídeo no template
+        video_size: (width, height) do tamanho do vídeo no template
     """
     # Cria um clip de fundo com gradiente azul/roxo
     def make_background_frame(t):
@@ -351,10 +360,43 @@ def create_template_clip(width: int, height: int, duration: float) -> mp.VideoCl
     
     background = mp.VideoClip(make_background_frame, duration=duration)
     
-    # Calcula dimensões das seções
-    header_height = int(height * 0.15)  # 15% para header
-    footer_height = int(height * 0.10)  # 10% para footer
-    video_area_height = height - header_height - footer_height
+    # Se temos informações do vídeo, calcula posições dinâmicas
+    if video_position and video_size:
+        video_x, video_y = video_position
+        video_w, video_h = video_size
+        
+        # Calcula espaços disponíveis
+        space_above = video_y
+        space_below = height - (video_y + video_h)
+        
+        # Header se posiciona muito próximo à borda superior do vídeo
+        header_height = max(int(space_above * 0.4), int(height * 0.06))  # Mínimo 6% da altura total
+        header_y = video_y - header_height - 5  # 5px acima da borda superior do vídeo
+        
+        # Footer se centraliza no espaço inferior
+        footer_height = max(int(space_below * 0.7), int(height * 0.08))  # Mínimo 8% da altura total
+        footer_y = video_y + video_h + (space_below - footer_height) // 2
+        
+        # Linhas de separação contornam exatamente o vídeo
+        top_line_y = video_y - 2  # 2px acima da borda superior
+        bottom_line_y = video_y + video_h  # 2px abaixo da borda inferior
+        
+    else:
+        # Fallback para quando não temos informações do vídeo
+        if video_format == "vertical":
+            header_height = int(height * 0.12)
+            footer_height = int(height * 0.08)
+        elif video_format == "square":
+            header_height = int(height * 0.13)
+            footer_height = int(height * 0.09)
+        else:  # horizontal
+            header_height = int(height * 0.15)
+            footer_height = int(height * 0.10)
+        
+        header_y = 0
+        footer_y = height - footer_height
+        top_line_y = header_height - 2
+        bottom_line_y = height - footer_height
     
     # Cria header
     header_elements = []
@@ -362,7 +404,7 @@ def create_template_clip(width: int, height: int, duration: float) -> mp.VideoCl
     # Logo circular "CV"
     logo_size = int(header_height * 0.6)
     logo_x = int(width * 0.05)
-    logo_y = header_height // 2
+    logo_y = header_y + header_height // 2
     
     # Cria logo circular com gradiente
     def make_logo_frame(t):
@@ -400,7 +442,7 @@ def create_template_clip(width: int, height: int, duration: float) -> mp.VideoCl
     
     # Título "CLIPVERSO"
     title_x = logo_x + logo_size + int(width * 0.03)
-    title_y = header_height // 2 - int(header_height * 0.15)
+    title_y = header_y + header_height // 2 - int(header_height * 0.15)
     
     title_clip = mp.TextClip("CLIPVERSO", fontsize=int(header_height * 0.25), 
                             font="Arial-Bold", color="white")
@@ -416,25 +458,27 @@ def create_template_clip(width: int, height: int, duration: float) -> mp.VideoCl
     subtitle_clip = subtitle_clip.set_duration(duration)
     header_elements.append(subtitle_clip)
     
-    # Linha superior do header
-    line_y = header_height - 2
+    # Linha superior do header (contorna o vídeo)
     line_clip = mp.ColorClip(size=(width, 2), color=[100, 150, 255], duration=duration)
-    line_clip = line_clip.set_position((0, line_y))
+    line_clip = line_clip.set_position((0, top_line_y))
     header_elements.append(line_clip)
     
     # Cria footer
     footer_elements = []
     
-    # Linha inferior do footer
-    footer_line_y = header_height + video_area_height
+    # Linha inferior do footer (contorna o vídeo)
     footer_line_clip = mp.ColorClip(size=(width, 2), color=[100, 150, 255], duration=duration)
-    footer_line_clip = footer_line_clip.set_position((0, footer_line_y))
+    footer_line_clip = footer_line_clip.set_position((0, bottom_line_y))
     footer_elements.append(footer_line_clip)
     
     # Texto do footer
     footer_text = "Se inscreva • Dé o like • @clipverso-ofc"
-    footer_text_y = footer_line_y + int(footer_height * 0.3)
-    footer_text_clip = mp.TextClip(footer_text, fontsize=int(footer_height * 0.3), 
+    footer_text_y = footer_y + footer_height // 2
+    
+    # Calcula tamanho da fonte proporcional ao espaço disponível
+    # Garante que o texto caiba na largura disponível
+    max_fontsize = min(int(footer_height * 0.4), int(width * 0.03))  # Máximo 4% da altura ou 3% da largura
+    footer_text_clip = mp.TextClip(footer_text, fontsize=max_fontsize, 
                                   font="Arial-Bold", color="white")
     footer_text_clip = footer_text_clip.set_position(("center", footer_text_y))
     footer_text_clip = footer_text_clip.set_duration(duration)
@@ -455,11 +499,15 @@ def make_clip(
         optimization_config: dict = None,
         content_speed: float = 1.25,
         preserve_pitch: bool = True,
-        cutting_duration: int = 61
+        cutting_duration: int = 61,
+        crop_mode: str = "fit"
     ) -> Path:
     """
     Recorta, converte para vertical 9:16, gera legendas dinâmicas estilizadas e devolve o caminho final.
     Garante que o clipe tenha no mínimo 1 minuto de duração.
+    
+    Args:
+        crop_mode: "fit" para mostrar todo o conteúdo, "center" para recortar ao centro
     """
     seg = transcript[highlight["idx"]]
     
@@ -574,25 +622,132 @@ def make_clip(
     final_width = 1080
     final_height = 1920
     
-    # Calcula dimensões das seções do template
-    header_height = int(final_height * 0.15)  # 15% para header
-    footer_height = int(final_height * 0.10)  # 10% para footer
-    video_area_height = final_height - header_height - footer_height
+    # Calcula dimensões das seções do template (serão ajustadas baseadas no formato)
     video_area_width = final_width - 40  # Margem de 20px de cada lado
     
-    # Redimensiona o vídeo para caber na área de vídeo do template
-    clip = clip.resize(height=video_area_height)
-    w, h = clip.size
+    # Análise inteligente do formato do vídeo original
+    original_w, original_h = clip.size
+    original_aspect_ratio = original_w / original_h
     
-    # Se o vídeo for mais largo que a área disponível, corta as laterais
-    if w > video_area_width:
-        x_center = w // 2
-        y_center = h // 2
-        clip = clip.crop(x_center=x_center, y_center=y_center, 
-                        width=video_area_width, height=video_area_height)
-    else:
-        # Se for mais estreito, centraliza
-        clip = clip.resize(width=video_area_width, height=video_area_height)
+    print(f"📐 Análise do vídeo original: {original_w}x{original_h} (proporção: {original_aspect_ratio:.2f})")
+    
+    # Função auxiliar para calcular dimensões do template baseadas no formato
+    def get_template_dimensions(format_type):
+        if format_type == "vertical":
+            header_height = int(final_height * 0.12)  # 12% para header
+            footer_height = int(final_height * 0.08)  # 8% para footer
+        elif format_type == "square":
+            header_height = int(final_height * 0.13)  # 13% para header
+            footer_height = int(final_height * 0.09)  # 9% para footer
+        else:  # horizontal
+            header_height = int(final_height * 0.15)  # 15% para header
+            footer_height = int(final_height * 0.10)  # 10% para footer
+        
+        video_area_height = final_height - header_height - footer_height
+        return header_height, footer_height, video_area_height
+    
+    # Define estratégia baseada na proporção original
+    video_format = "horizontal"  # Padrão
+    
+    if original_aspect_ratio > 1.5:  # Vídeo horizontal (16:9, 4:3, etc.)
+        if crop_mode == "fit":
+            print("🔄 Estratégia: Vídeo horizontal - mostrar todo conteúdo lateral")
+        else:
+            print("🔄 Estratégia: Vídeo horizontal - recorte ao centro")
+        
+        video_format = "horizontal"
+        
+        # Calcula dimensões do template para vídeo horizontal
+        header_height, footer_height, video_area_height = get_template_dimensions(video_format)
+        
+        if crop_mode == "fit":
+            # Redimensiona para caber toda a largura na área disponível
+            clip = clip.resize(width=video_area_width)
+            w, h = clip.size
+            
+            # Se a altura for maior que a área disponível, ajusta proporcionalmente
+            if h > video_area_height:
+                scale_factor = video_area_height / h
+                new_width = int(w * scale_factor)
+                clip = clip.resize(width=new_width, height=video_area_height)
+                w, h = clip.size
+            
+            # Centraliza verticalmente na área disponível
+            y_offset = (video_area_height - h) // 2
+            video_y = header_height + y_offset
+            clip = clip.set_position((20, video_y))
+        else:  # crop_mode == "center"
+            # Redimensiona para caber toda a altura na área disponível
+            clip = clip.resize(height=video_area_height)
+            w, h = clip.size
+            
+            # Se a largura for maior que a área disponível, corta as laterais
+            if w > video_area_width:
+                x_center = w // 2
+                y_center = h // 2
+                clip = clip.crop(x_center=x_center, y_center=y_center, 
+                                width=video_area_width, height=video_area_height)
+                w, h = clip.size
+            
+            # Centraliza na área disponível
+            x_offset = (video_area_width - w) // 2
+            y_offset = (video_area_height - h) // 2
+            video_y = header_height + y_offset
+            clip = clip.set_position((20 + x_offset, video_y))
+        
+    elif original_aspect_ratio < 0.8:  # Vídeo vertical (9:16, 3:4, etc.)
+        print("🔄 Estratégia: Vídeo vertical - adaptar molde para aproveitar espaço")
+        video_format = "vertical"
+        
+        # Calcula dimensões do template para vídeo vertical
+        header_height, footer_height, video_area_height = get_template_dimensions(video_format)
+        
+        # Redimensiona para caber toda a altura na área disponível
+        clip = clip.resize(height=video_area_height)
+        w, h = clip.size
+        
+        # Se a largura for maior que a área disponível, ajusta proporcionalmente
+        if w > video_area_width:
+            scale_factor = video_area_width / w
+            new_height = int(h * scale_factor)
+            clip = clip.resize(width=video_area_width, height=new_height)
+            w, h = clip.size
+        
+        # Centraliza horizontalmente na área disponível
+        x_offset = (video_area_width - w) // 2
+        video_y = header_height
+        clip = clip.set_position((20 + x_offset, video_y))
+        
+    else:  # Vídeo quadrado ou próximo do quadrado
+        print("🔄 Estratégia: Vídeo quadrado - ajuste proporcional")
+        video_format = "square"
+        
+        # Calcula dimensões do template para vídeo quadrado
+        header_height, footer_height, video_area_height = get_template_dimensions(video_format)
+        
+        # Redimensiona para caber na área disponível mantendo proporção
+        if original_aspect_ratio > 1:  # Ligeiramente horizontal
+            clip = clip.resize(width=video_area_width)
+            w, h = clip.size
+            if h > video_area_height:
+                scale_factor = video_area_height / h
+                new_width = int(w * scale_factor)
+                clip = clip.resize(width=new_width, height=video_area_height)
+                w, h = clip.size
+            y_offset = (video_area_height - h) // 2
+            video_y = header_height + y_offset
+            clip = clip.set_position((20, video_y))
+        else:  # Ligeiramente vertical
+            clip = clip.resize(height=video_area_height)
+            w, h = clip.size
+            if w > video_area_width:
+                scale_factor = video_area_width / w
+                new_height = int(h * scale_factor)
+                clip = clip.resize(width=video_area_width, height=new_height)
+                w, h = clip.size
+            x_offset = (video_area_width - w) // 2
+            video_y = header_height
+            clip = clip.set_position((20 + x_offset, video_y))
     
     # Garante dimensões pares
     final_w, final_h = clip.size
@@ -601,7 +756,12 @@ def make_clip(
         new_h = final_h // 2 * 2
         clip = clip.resize(newsize=(new_w, new_h))
     
-    print(f"Tamanho do vídeo na área: {final_w}x{final_h}")
+    # Usa as posições calculadas durante o posicionamento
+    video_x = 20  # Posição padrão X (já calculada acima)
+    # video_y já foi calculada durante o posicionamento em cada estratégia
+    
+    print(f"✅ Vídeo adaptado: {final_w}x{final_h} na área de conteúdo")
+    print(f"   • Posição: ({video_x}, {video_y})")
 
     font_path = get_font_path()
     fontsize = int(0.06 * video_area_height)  # 4% da altura da área de vídeo
@@ -661,13 +821,22 @@ def make_clip(
             segmento_destacado = highlight_keywords(segmento)
 
             try:
+                # Calcula a posição da legenda para acompanhar exatamente a borda do vídeo
+                # As legendas aparecem logo abaixo da borda inferior do vídeo
+                video_bottom = video_y + final_h
+                legenda_y = video_bottom + 10  # 10px de margem abaixo da borda do vídeo
+                
+                # Se a legenda ficaria muito baixa, posiciona logo acima da borda superior
+                if legenda_y + fontsize > final_height - 50:  # 50px de margem do fundo
+                    legenda_y = video_y - fontsize - 10  # 10px acima da borda superior
+                
                 legenda = create_animated_text(
                     segmento_destacado,
                     duracao_segmento,
                     font_path,
                     fontsize,
-                    video_area_width,
-                    ("center", video_area_height - fontsize - margin_bottom)
+                    final_width,  # Usa a largura total do template
+                    ("center", legenda_y)
                 )
 
                 legenda = legenda.set_start(max(0, subseg_start - 0))
@@ -677,13 +846,20 @@ def make_clip(
                 print(f"Detalhes do erro: {str(e)}")
                 continue
 
-    # Cria o template com header e footer
-    template = create_template_clip(final_width, final_height, clip.duration)
+    # Cria o template com header e footer adaptado ao formato do vídeo
+    # Passa informações da posição e tamanho do vídeo para posicionamento dinâmico
+    video_pos = (video_x, video_y)  # Usa as posições capturadas anteriormente
+    video_sz = (final_w, final_h)  # Usa o tamanho final do vídeo
+    
+    template = create_template_clip(final_width, final_height, clip.duration, video_format, 
+                                  video_position=video_pos, video_size=video_sz)
     
     # Posiciona o vídeo com legendas na área central do template
+    # O vídeo já está posicionado corretamente, então apenas combina com as legendas
     video_with_subtitles = mp.CompositeVideoClip([clip] + legendas, 
-                                                size=(video_area_width, video_area_height))
-    video_with_subtitles = video_with_subtitles.set_position((20, header_height))  # 20px de margem
+                                                size=(final_width, final_height))
+    # O vídeo já tem sua posição definida, então apenas centraliza o composite
+    video_with_subtitles = video_with_subtitles.set_position((0, 0))
     
     # Combina template com vídeo
     final = mp.CompositeVideoClip([template, video_with_subtitles], 

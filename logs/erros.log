@@ -1,0 +1,38 @@
+------------------------------------------------------------
+[2025-08-01 16:16:00] Episódio: https://www.youtube.com/watch?v=JyOLB_HsgTo
+Traceback (most recent call last):
+  File "C:\Users\vidal\Documents\podcast_cuts/main.py", line 145, in run
+    generated_clips = process_single_video(episode_url, video_cfg)
+  File "C:\Users\vidal\Documents\podcast_cuts/main.py", line 69, in process_single_video
+    clip_path = editor.make_clip(
+  File "C:\Users\vidal\Documents\podcast_cuts\modules\editor.py", line 725, in make_clip
+    video_y = clip.pos[1] if hasattr(clip, 'pos') else header_height
+TypeError: 'function' object is not subscriptable
+
+------------------------------------------------------------
+[2025-08-01 20:01:49] Episódio: https://www.youtube.com/watch?v=l1IUO8QExFM
+Traceback (most recent call last):
+  File "C:\Users\vidal\Documents\podcast_cuts/main.py", line 145, in run
+    generated_clips = process_single_video(episode_url, video_cfg)
+  File "C:\Users\vidal\Documents\podcast_cuts/main.py", line 69, in process_single_video
+    clip_path = editor.make_clip(
+  File "C:\Users\vidal\Documents\podcast_cuts\modules\editor.py", line 829, in make_clip
+    template = create_template_clip(final_width, final_height, clip.duration, video_format,
+  File "C:\Users\vidal\Documents\podcast_cuts\modules\editor.py", line 370, in create_template_clip
+    header_y = top_line_y - header_height - 5  # 5px acima da linha superior
+UnboundLocalError: local variable 'top_line_y' referenced before assignment
+
+------------------------------------------------------------
+[2025-08-01 20:07:55] Episódio: https://www.youtube.com/watch?v=l1IUO8QExFM
+Traceback (most recent call last):
+  File "C:\Users\vidal\Documents\podcast_cuts/main.py", line 145, in run
+    generated_clips = process_single_video(episode_url, video_cfg)
+  File "C:\Users\vidal\Documents\podcast_cuts/main.py", line 69, in process_single_video
+    clip_path = editor.make_clip(
+  File "C:\Users\vidal\Documents\podcast_cuts\modules\editor.py", line 829, in make_clip
+    template = create_template_clip(final_width, final_height, clip.duration, video_format,
+  File "C:\Users\vidal\Documents\podcast_cuts\modules\editor.py", line 370, in create_template_clip
+    header_y = top_line_y - header_height - 5  # 5px acima da linha superior
+UnboundLocalError: local variable 'top_line_y' referenced before assignment
+
+------------------------------------------------------------

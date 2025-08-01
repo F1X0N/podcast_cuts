@@ -1,20 +1,23 @@
 {
     "pattern_video_configuration": {
         "tags": ["cortes", "fy", "foryou", "clipverso-ofc"],
-        "highlights": 1,
-        "append_outro": true,
-        "content_speed": 1.5,
+        "highlights": 2,
+        "append_outro": false,
+        "content_speed": 1.25,
         "preserve_pitch": true,
-        "video_duration": 57
+        "video_duration": 61,
+        "crop_mode": "fit"
     },
     "video_configuration": [
         {
-            "input_url": "https://www.youtube.com/watch?v=9NJZJq333bo",
-            "pattern_video_configuration": true
-        },
-        {
-            "input_url": "https://www.youtube.com/watch?v=roEsX3yjba8",
-            "pattern_video_configuration": true
+            "input_url": "https://www.youtube.com/watch?v=JyOLB_HsgTo",
+            "tags": ["cortes", "fy", "foryou", "clipverso-ofc"],
+            "highlights": 1,
+            "append_outro": false,
+            "content_speed": 1,
+            "preserve_pitch": true,
+            "video_duration": 3,
+            "crop_mode": "fit"
         }
     ],
     "system_configuration": {
@@ -25,7 +28,7 @@
         },
         "video_optimization": {
             "use_gpu": true,
-            "quality": "balanced",
+            "quality": "high",
             "enable_parallel": true
         },
         "paths": {

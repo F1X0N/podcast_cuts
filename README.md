@@ -12,6 +12,10 @@ Sistema automatizado para criar e publicar cortes de podcasts no YouTube, utiliz
 - Upload automático para YouTube
 - Sistema de checkpoints para retomada de processamento
 - Processamento em lote de múltiplos vídeos
+- **Template dinâmico** que se adapta ao formato do vídeo
+- **Controle de recorte** (fit/center) para diferentes estilos
+- **Posicionamento inteligente** de elementos visuais
+- **Legendas dinâmicas** que acompanham a borda do vídeo
 
 ## Requisitos
 
@@ -139,6 +143,7 @@ Configurações padrão aplicadas a todos os vídeos:
 - **content_speed**: Velocidade do conteúdo (1.25 = 25% mais rápido)
 - **preserve_pitch**: Manter tom da voz original
 - **video_duration**: Duração final em segundos
+- **crop_mode**: Modo de recorte ("fit" ou "center")
 
 #### `video_configuration`
 Lista de vídeos para processar:
@@ -167,6 +172,35 @@ O sistema permite controlar a velocidade do conteúdo principal dos shorts:
 
 **Nota**: A velocidade é aplicada ao conteúdo principal do short, e as legendas são automaticamente sincronizadas para acompanhar o áudio acelerado.
 
+### 🎬 Configurações de Recorte (Crop Mode)
+
+O sistema permite controlar como o vídeo será recortado para o formato vertical:
+
+- **crop_mode**: Modo de recorte (padrão: "fit")
+  - `"fit"` = Mostra todo o conteúdo, redimensiona para caber na largura
+  - `"center"` = Recorta ao centro, corta as laterais para manter proporção
+
+**Exemplo de configuração**:
+```json
+{
+    "pattern_video_configuration": {
+        "crop_mode": "fit"  // Padrão para todos os vídeos
+    },
+    "video_configuration": [
+        {
+            "input_url": "https://www.youtube.com/watch?v=...",
+            "crop_mode": "center"  // Configuração específica para este vídeo
+        }
+    ]
+}
+```
+
+**Comportamento por formato de vídeo**:
+- **Vídeos horizontais** com `"fit"`: Mostra todo o conteúdo lateral
+- **Vídeos horizontais** com `"center"`: Recorta ao centro, cortando laterais
+- **Vídeos verticais**: Comportamento similar em ambos os modos
+- **Vídeos quadrados**: Comportamento similar em ambos os modos
+
 ### 🎯 Como Funciona a Sincronização
 
 Quando você configura `content_speed: 1.25`, o sistema:
@@ -189,6 +223,35 @@ O sistema pode acelerar o vídeo mantendo o pitch original da voz:
 - **preserve_pitch: false**: Altera o pitch junto com a velocidade (voz fica mais fina/grave)
 
 **Limitações**: A preservação de pitch funciona até 2x de velocidade. Acima disso, o sistema automaticamente usa o método padrão.
+
+### 🎨 Template Dinâmico Inteligente
+
+O sistema agora inclui um template dinâmico que se adapta automaticamente ao formato do vídeo:
+
+#### 🎯 **Adaptação Inteligente de Formato**
+- **Vídeos horizontais**: Mostra todo o conteúdo lateral sem cortar
+- **Vídeos verticais**: Adapta o molde para aproveitar melhor o espaço
+- **Vídeos quadrados**: Ajuste proporcional intermediário
+
+#### 📐 **Layout Dinâmico**
+- **Header**: Se posiciona dinamicamente baseado na posição do vídeo
+- **Linhas contornantes**: Contornam exatamente as bordas do vídeo
+- **Legendas**: Acompanham a borda do vídeo (não mais fixas)
+- **Footer**: Centralizado no espaço inferior restante
+
+#### 🎬 **Elementos do Template**
+- **Logo "CV"**: Circular com gradiente azul/roxo
+- **Texto "CLIPVERSO"**: Título principal em branco
+- **Subtitle "CANAL DE CORTES"**: Em azul claro
+- **Linhas de separação**: Azul claro, contornam o vídeo
+- **Footer**: "Se inscreva • Dé o like • @clipverso-ofc"
+
+#### 🔧 **Posicionamento Inteligente**
+- **Header**: 5px acima da borda superior do vídeo
+- **Linha superior**: 2px acima da borda superior do vídeo
+- **Linha inferior**: 2px abaixo da borda inferior do vídeo
+- **Legendas**: 10px abaixo da borda inferior do vídeo
+- **Footer**: Centralizado no espaço inferior disponível
 
 ### ⏱️ Configuração de Duração
 

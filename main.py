@@ -75,7 +75,8 @@ def process_single_video(episode_url: str, cfg: dict):
             optimization_config,
             cfg.get("content_speed", 1.25),
             cfg.get("preserve_pitch", True),
-            cfg.get("video_duration", 61)
+            cfg.get("video_duration", 61),
+            cfg.get("crop_mode", "fit")
         )
         
         # Salva os metadados do corte
