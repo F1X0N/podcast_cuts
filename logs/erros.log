@@ -36,3 +36,103 @@ Traceback (most recent call last):
 UnboundLocalError: local variable 'top_line_y' referenced before assignment
 
 ------------------------------------------------------------
+[2025-08-01 21:56:56] Episódio: https://www.youtube.com/watch?v=JyOLB_HsgTo
+Traceback (most recent call last):
+  File "c:\Users\vidal\Documents\podcast_cuts\venv\lib\site-packages\moviepy\video\VideoClip.py", line 1137, in __init__
+    subprocess_call(cmd, logger=None)
+  File "c:\Users\vidal\Documents\podcast_cuts\venv\lib\site-packages\moviepy\tools.py", line 46, in subprocess_call
+    proc = sp.Popen(cmd, **popen_params)
+  File "C:\Users\vidal\AppData\Local\Programs\Python\Python310\lib\subprocess.py", line 971, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+  File "C:\Users\vidal\AppData\Local\Programs\Python\Python310\lib\subprocess.py", line 1440, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+  File "c:\Users\vidal\.cursor\extensions\ms-python.debugpy-2025.8.0-win32-x64\bundled\libs\debugpy\_vendored\pydevd\_pydev_bundle\pydev_monkey.py", line 911, in new_CreateProcess
+    return getattr(_subprocess, original_name)(app_name, cmd_line, *args)
+FileNotFoundError: [WinError 2] O sistema não pode encontrar o arquivo especificado
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\vidal\Documents\podcast_cuts/main.py", line 146, in run
+    generated_clips = process_single_video(episode_url, video_cfg)
+  File "C:\Users\vidal\Documents\podcast_cuts/main.py", line 69, in process_single_video
+    clip_path = editor.make_clip(
+  File "C:\Users\vidal\Documents\podcast_cuts\modules\editor.py", line 882, in make_clip
+    template = create_template_clip(final_width, final_height, clip.duration, video_format,
+  File "C:\Users\vidal\Documents\podcast_cuts\modules\editor.py", line 468, in create_template_clip
+    cv_text = mp.TextClip("CV", fontsize=int(logo_size * 0.4), font="Arial-Bold",
+  File "c:\Users\vidal\Documents\podcast_cuts\venv\lib\site-packages\moviepy\video\VideoClip.py", line 1146, in __init__
+    raise IOError(error)
+OSError: MoviePy Error: creation of None failed because of the following error:
+
+[WinError 2] O sistema não pode encontrar o arquivo especificado.
+
+.This error can be due to the fact that ImageMagick is not installed on your computer, or (for Windows users) that you didn't specify the path to the ImageMagick binary in file conf.py, or that the path you specified is incorrect
+
+------------------------------------------------------------
+[2025-08-01 22:02:00] Episódio: https://www.youtube.com/watch?v=JyOLB_HsgTo
+Traceback (most recent call last):
+  File "C:\Users\vidal\Documents\podcast_cuts\venv\lib\site-packages\moviepy\video\VideoClip.py", line 1137, in __init__
+    subprocess_call(cmd, logger=None)
+  File "C:\Users\vidal\Documents\podcast_cuts\venv\lib\site-packages\moviepy\tools.py", line 46, in subprocess_call
+    proc = sp.Popen(cmd, **popen_params)
+  File "C:\Users\vidal\AppData\Local\Programs\Python\Python310\lib\subprocess.py", line 971, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+  File "C:\Users\vidal\AppData\Local\Programs\Python\Python310\lib\subprocess.py", line 1440, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+FileNotFoundError: [WinError 2] O sistema não pode encontrar o arquivo especificado
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\vidal\Documents\podcast_cuts\main.py", line 146, in run
+    generated_clips = process_single_video(episode_url, video_cfg)
+  File "C:\Users\vidal\Documents\podcast_cuts\main.py", line 69, in process_single_video
+    clip_path = editor.make_clip(
+  File "C:\Users\vidal\Documents\podcast_cuts\modules\editor.py", line 882, in make_clip
+    template = create_template_clip(final_width, final_height, clip.duration, video_format,
+  File "C:\Users\vidal\Documents\podcast_cuts\modules\editor.py", line 468, in create_template_clip
+    cv_text = mp.TextClip("CV", fontsize=int(logo_size * 0.4), font="Arial-Bold",
+  File "C:\Users\vidal\Documents\podcast_cuts\venv\lib\site-packages\moviepy\video\VideoClip.py", line 1146, in __init__
+    raise IOError(error)
+OSError: MoviePy Error: creation of None failed because of the following error:
+
+[WinError 2] O sistema não pode encontrar o arquivo especificado.
+
+.This error can be due to the fact that ImageMagick is not installed on your computer, or (for Windows users) that you didn't specify the path to the ImageMagick binary in file conf.py, or that the path you specified is incorrect
+
+------------------------------------------------------------
+[2025-08-01 22:02:25] Episódio: https://www.youtube.com/watch?v=JyOLB_HsgTo
+Traceback (most recent call last):
+  File "c:\Users\vidal\Documents\podcast_cuts\venv\lib\site-packages\moviepy\video\VideoClip.py", line 1137, in __init__
+    subprocess_call(cmd, logger=None)
+  File "c:\Users\vidal\Documents\podcast_cuts\venv\lib\site-packages\moviepy\tools.py", line 46, in subprocess_call
+    proc = sp.Popen(cmd, **popen_params)
+  File "C:\Users\vidal\AppData\Local\Programs\Python\Python310\lib\subprocess.py", line 971, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+  File "C:\Users\vidal\AppData\Local\Programs\Python\Python310\lib\subprocess.py", line 1440, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+  File "c:\Users\vidal\.cursor\extensions\ms-python.debugpy-2025.8.0-win32-x64\bundled\libs\debugpy\_vendored\pydevd\_pydev_bundle\pydev_monkey.py", line 911, in new_CreateProcess
+    return getattr(_subprocess, original_name)(app_name, cmd_line, *args)
+FileNotFoundError: [WinError 2] O sistema não pode encontrar o arquivo especificado
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\vidal\Documents\podcast_cuts/main.py", line 146, in run
+    generated_clips = process_single_video(episode_url, video_cfg)
+  File "C:\Users\vidal\Documents\podcast_cuts/main.py", line 69, in process_single_video
+    clip_path = editor.make_clip(
+  File "C:\Users\vidal\Documents\podcast_cuts\modules\editor.py", line 886, in make_clip
+    template = create_template_clip(final_width, final_height, clip.duration, video_format,
+  File "C:\Users\vidal\Documents\podcast_cuts\modules\editor.py", line 472, in create_template_clip
+    cv_text = mp.TextClip("CV", fontsize=int(logo_size * 0.4), font="Arial-Bold",
+  File "c:\Users\vidal\Documents\podcast_cuts\venv\lib\site-packages\moviepy\video\VideoClip.py", line 1146, in __init__
+    raise IOError(error)
+OSError: MoviePy Error: creation of None failed because of the following error:
+
+[WinError 2] O sistema não pode encontrar o arquivo especificado.
+
+.This error can be due to the fact that ImageMagick is not installed on your computer, or (for Windows users) that you didn't specify the path to the ImageMagick binary in file conf.py, or that the path you specified is incorrect
+
+------------------------------------------------------------

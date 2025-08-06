@@ -886,3 +886,99 @@
   total_brl: 0.0
   total_usd: 0
   usd_brl: 5.0
+- data: '2025-08-01 22:02:10'
+  episodio: PROCESSAMENTO_MULTIPLO
+  etapas: {}
+  total_brl: 0.0
+  total_usd: 0
+  usd_brl: 5.0
+- data: '2025-08-01 22:06:17'
+  episodio: PROCESSAMENTO_MULTIPLO
+  etapas: {}
+  total_brl: 0.0
+  total_usd: 0
+  usd_brl: 5.0
+- data: '2025-08-01 22:12:55'
+  episodio: PROCESSAMENTO_MULTIPLO
+  etapas:
+    highlighter:
+      cache: 0
+      calls: 1
+      input: 3626
+      output: 1099
+      usd: 0.0012033
+  total_brl: 0.0060165
+  total_usd: 0.0012033
+  usd_brl: 5.0
+- data: '2025-08-01 22:27:12'
+  episodio: PROCESSAMENTO_MULTIPLO
+  etapas:
+    highlighter:
+      cache: 0
+      calls: 1
+      input: 3626
+      output: 967
+      usd: 0.0011240999999999998
+  total_brl: 0.005620499999999999
+  total_usd: 0.0011240999999999998
+  usd_brl: 5.0
+- data: '2025-08-01 22:35:22'
+  episodio: PROCESSAMENTO_MULTIPLO
+  etapas:
+    highlighter:
+      cache: 0
+      calls: 1
+      input: 3626
+      output: 846
+      usd: 0.0010515
+  total_brl: 0.0052575
+  total_usd: 0.0010515
+  usd_brl: 5.0
+- data: '2025-08-01 22:44:42'
+  episodio: PROCESSAMENTO_MULTIPLO
+  etapas:
+    highlighter:
+      cache: 0
+      calls: 1
+      input: 3626
+      output: 1167
+      usd: 0.0012441
+  total_brl: 0.0062204999999999995
+  total_usd: 0.0012441
+  usd_brl: 5.0
+- data: '2025-08-01 22:52:28'
+  episodio: PROCESSAMENTO_MULTIPLO
+  etapas:
+    highlighter:
+      cache: 0
+      calls: 1
+      input: 3626
+      output: 660
+      usd: 0.0009398999999999999
+  total_brl: 0.0046995
+  total_usd: 0.0009398999999999999
+  usd_brl: 5.0
+- data: '2025-08-01 22:57:46'
+  episodio: PROCESSAMENTO_MULTIPLO
+  etapas:
+    highlighter:
+      cache: 0
+      calls: 1
+      input: 3626
+      output: 982
+      usd: 0.0011331
+  total_brl: 0.0056654999999999995
+  total_usd: 0.0011331
+  usd_brl: 5.0
+- data: '2025-08-01 23:09:50'
+  episodio: PROCESSAMENTO_MULTIPLO
+  etapas:
+    highlighter:
+      cache: 0
+      calls: 1
+      input: 3626
+      output: 901
+      usd: 0.0010845
+  total_brl: 0.0054225
+  total_usd: 0.0010845
+  usd_brl: 5.0

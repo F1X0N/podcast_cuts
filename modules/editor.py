@@ -90,14 +90,14 @@ def list_video_clips(base_clips_dir: str) -> dict:
     return clips_info
 
 def get_font_path():
-    # Usa Roboto-Bold.ttf da pasta fonts/ se existir, senão Arial
+    # Usa Roboto-Bold.ttf da pasta fonts/ se existir, senão Arial-Bold
     font_dir = os.path.join(os.getcwd(), "fonts")
     font_path = os.path.join(font_dir, "Roboto-Bold.ttf")
     if os.path.exists(font_path):
         print(f"Usando fonte: {font_path}")
         return font_path
-    print("Usando fonte fallback: Arial")
-    return "Arial"
+    print("Usando fonte fallback: Arial-Bold")
+    return "Arial-Bold"
 
 def get_checkpoint_path(out_dir: str) -> Path:
     """Retorna o caminho do arquivo de checkpoint"""
@@ -246,15 +246,45 @@ def create_animated_text(text: str, duration: float, font_path: str, fontsize: i
     """
     Cria um TextClip com animações básicas.
     """
+    # Configura ImageMagick antes de criar o TextClip
+    import os
+    import moviepy.config as mpconfig
+    
+    # Define o caminho do ImageMagick
+    imagemagick_path = r"C:\Program Files\ImageMagick-7.1.1-Q16-HDRI\magick.exe"
+    os.environ["IMAGEMAGICK_BINARY"] = imagemagick_path
+    
+    # Tenta configurar via MoviePy config
+    try:
+        mpconfig.change_settings({"IMAGEMAGICK_BINARY": imagemagick_path})
+    except:
+        pass  # Se não funcionar, continua com a variável de ambiente
+    
+    # Converte texto para MAIÚSCULAS
+    text_upper = text.upper()
+    
     # Cria o clip base com o texto
-    clip = mp.TextClip(text,
-        fontsize=fontsize,
-        font=font_path,
-        color="white",
-        stroke_color="black",
-        stroke_width=2,
-        method="caption",
-        size=(width-80, None))
+    try:
+        # Tenta primeiro com a fonte Anton
+        clip = mp.TextClip(text_upper,
+            fontsize=fontsize,
+            font=font_path,
+            color="#E4EB34",  # Amarelo #E4EB34 (RGB 228 236 52)
+            stroke_color="#E4EB34",  # Contorno preto
+            stroke_width=3,  # 3px de espessura para mais peso visual
+            method="caption",
+            size=(width-80, None))
+    except Exception as e:
+        print(f"⚠️ Erro ao usar fonte Anton: {e}")
+        print("   • Usando fonte padrão Arial")
+        # Fallback para fonte padrão
+        clip = mp.TextClip(text_upper,
+            fontsize=fontsize,
+            color="#E4EB34",  # Amarelo #E4EB34 (RGB 228 236 52)
+            stroke_color="#E4EB34",  # Contorno preto
+            stroke_width=3,  # 3px de espessura para mais peso visual
+            method="caption",
+            size=(width-80, None))
     
     # Define a duração total
     clip = clip.set_duration(duration)
@@ -270,24 +300,54 @@ def create_typing_effect(text: str, duration: float, font_path: str, fontsize: i
     """
     Cria um TextClip com efeito de digitação.
     """
+    # Configura ImageMagick antes de criar o TextClip
+    import os
+    import moviepy.config as mpconfig
+    
+    # Define o caminho do ImageMagick
+    imagemagick_path = r"C:\Program Files\ImageMagick-7.1.1-Q16-HDRI\magick.exe"
+    os.environ["IMAGEMAGICK_BINARY"] = imagemagick_path
+    
+    # Tenta configurar via MoviePy config
+    try:
+        mpconfig.change_settings({"IMAGEMAGICK_BINARY": imagemagick_path})
+    except:
+        pass  # Se não funcionar, continua com a variável de ambiente
+    
+    # Converte texto para MAIÚSCULAS
+    text_upper = text.upper()
+    
     # Calcula quantos caracteres devem aparecer por frame
     chars_per_second = 1 / typing_speed
-    total_chars = len(text)
+    total_chars = len(text_upper)
     
     def make_frame(t):
         # Calcula quantos caracteres devem estar visíveis
         visible_chars = min(int(t * chars_per_second), total_chars)
-        return text[:visible_chars]
+        return text_upper[:visible_chars]
     
     # Cria o clip base
-    base_clip = mp.TextClip(make_frame,
-        fontsize=fontsize,
-        font=font_path,
-        color="white",
-        stroke_color="black",
-        stroke_width=2,
-        method="caption",
-        size=(width-80, None))
+    try:
+        # Tenta primeiro com a fonte Anton
+        base_clip = mp.TextClip(make_frame,
+            fontsize=fontsize,
+            font=font_path,
+            color="#E4EB34",  # Amarelo #E4EB34 (RGB 228 236 52)
+            stroke_color="#E4EB34",  # Contorno preto
+            stroke_width=3,  # 3px de espessura para mais peso visual
+            method="caption",
+            size=(width-80, None))
+    except Exception as e:
+        print(f"⚠️ Erro ao usar fonte Anton: {e}")
+        print("   • Usando fonte padrão Arial")
+        # Fallback para fonte padrão
+        base_clip = mp.TextClip(make_frame,
+            fontsize=fontsize,
+            color="#E4EB34",  # Amarelo #E4EB34 (RGB 228 236 52)
+            stroke_color="#E4EB34",  # Contorno preto
+            stroke_width=3,  # 3px de espessura para mais peso visual
+            method="caption",
+            size=(width-80, None))
     
     # Define a duração total
     base_clip = base_clip.set_duration(duration)
@@ -306,8 +366,8 @@ def highlight_keywords(text: str) -> str:
         "nunca", "sempre", "jamais", "definitivamente"
     ]
     
-    # Cores para destacar (em formato hex)
-    colors = ["#FFD700", "#FF69B4", "#00FF00", "#FF4500"]
+    # Cores para destacar (em formato hex) - usando variações do amarelo
+    colors = ["#FFD700", "#FFEB3B", "#FFF176", "#FFF59D"]
     
     # Divide o texto em palavras
     words = text.split()
@@ -472,8 +532,8 @@ def create_template_clip(width: int, height: int, duration: float, video_format:
     footer_elements.append(footer_line_clip)
     
     # Texto do footer
-    footer_text = "Se inscreva • Dé o like • @clipverso-ofc"
-    footer_text_y = footer_y + footer_height // 2
+    footer_text = "Se inscreva • Dê o like • Comente • @clipverso-ofc"
+    footer_text_y = bottom_line_y + 5  # 5px abaixo da linha inferior
     
     # Calcula tamanho da fonte proporcional ao espaço disponível
     # Garante que o texto caiba na largura disponível
@@ -764,16 +824,9 @@ def make_clip(
     print(f"   • Posição: ({video_x}, {video_y})")
 
     font_path = get_font_path()
-    fontsize = int(0.06 * video_area_height)  # 4% da altura da área de vídeo
-    margin_bottom = int(0.08 * video_area_height)  # Margem dentro da área de vídeo
+    # Tamanho da fonte: ~2.2% da altura do quadro (≈ 42–48 px em vídeos 1080 × 1920)
+    fontsize = int(0.022 * final_height)  # 2.2% da altura total do quadro
     legendas = []
-    
-    # Testa se a fonte está funcionando
-    try:
-        test_clip = mp.TextClip("Teste", fontsize=fontsize, font=font_path, fontweight="bold", color="white")
-        test_clip.close()
-    except Exception as e:
-        font_path = "Arial"
     
     # Filtra apenas segmentos dentro do corte para otimizar
     relevant_segments = [
@@ -821,14 +874,8 @@ def make_clip(
             segmento_destacado = highlight_keywords(segmento)
 
             try:
-                # Calcula a posição da legenda para acompanhar exatamente a borda do vídeo
-                # As legendas aparecem logo abaixo da borda inferior do vídeo
-                video_bottom = video_y + final_h
-                legenda_y = video_bottom + 10  # 10px de margem abaixo da borda do vídeo
-                
-                # Se a legenda ficaria muito baixa, posiciona logo acima da borda superior
-                if legenda_y + fontsize > final_height - 50:  # 50px de margem do fundo
-                    legenda_y = video_y - fontsize - 10  # 10px acima da borda superior
+                # Posicionamento: centralizar horizontalmente; alinhar verticalmente mais abaixo do meio do quadro (~65% da altura)
+                legenda_y = int(final_height * 0.63)  # 63% da altura do quadro
                 
                 legenda = create_animated_text(
                     segmento_destacado,

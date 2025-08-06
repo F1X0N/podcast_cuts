@@ -1,7 +1,7 @@
 {
     "pattern_video_configuration": {
         "tags": ["cortes", "fy", "foryou", "clipverso-ofc"],
-        "highlights": 2,
+        "highlights": 1,
         "append_outro": false,
         "content_speed": 1.25,
         "preserve_pitch": true,
@@ -10,21 +10,35 @@
     },
     "video_configuration": [
         {
-            "input_url": "https://www.youtube.com/watch?v=JyOLB_HsgTo",
-            "tags": ["cortes", "fy", "foryou", "clipverso-ofc"],
-            "highlights": 1,
-            "append_outro": false,
-            "content_speed": 1,
-            "preserve_pitch": true,
-            "video_duration": 3,
-            "crop_mode": "fit"
+            "input_url": "https://www.youtube.com/watch?v=sD-6M1yXnpg",
+            "pattern_video_configuration": true
+        },
+        {
+            "input_url": "https://www.youtube.com/watch?v=K_b80wPvEvc",
+            "pattern_video_configuration": true
+        },
+        {
+            "input_url": "https://www.youtube.com/watch?v=RHINMS7s5mY",
+            "pattern_video_configuration": true
+        },
+        {
+            "input_url": "https://www.youtube.com/watch?v=rt1I5XCDLso",
+            "pattern_video_configuration": true
+        },
+        {
+            "input_url": "https://www.youtube.com/watch?v=78eEs4gT3_Y",
+            "pattern_video_configuration": true
+        },
+        {
+            "input_url": "https://www.youtube.com/watch?v=u5_Bg-T7dX4",
+            "pattern_video_configuration": true
         }
     ],
     "system_configuration": {
-        "upload_mode": true,
+        "upload_mode": false,
         "upload_delay": {
-            "min_seconds": 1800,
-            "max_seconds": 3600
+            "min_seconds": 180,
+            "max_seconds": 360
         },
         "video_optimization": {
             "use_gpu": true,

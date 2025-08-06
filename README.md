@@ -15,7 +15,7 @@ Sistema automatizado para criar e publicar cortes de podcasts no YouTube, utiliz
 - **Template dinâmico** que se adapta ao formato do vídeo
 - **Controle de recorte** (fit/center) para diferentes estilos
 - **Posicionamento inteligente** de elementos visuais
-- **Legendas dinâmicas** que acompanham a borda do vídeo
+- **Legendas dinâmicas** com estilo profissional (fonte Anton, amarelo, contorno preto)
 
 ## Requisitos
 
@@ -250,8 +250,34 @@ O sistema agora inclui um template dinâmico que se adapta automaticamente ao fo
 - **Header**: 5px acima da borda superior do vídeo
 - **Linha superior**: 2px acima da borda superior do vídeo
 - **Linha inferior**: 2px abaixo da borda inferior do vídeo
-- **Legendas**: 10px abaixo da borda inferior do vídeo
+- **Legendas**: Centralizadas horizontalmente, ~55% da altura do quadro
 - **Footer**: Centralizado no espaço inferior disponível
+
+### 📝 **Sistema de Legendas Profissional**
+
+O sistema inclui legendas com estilo profissional otimizado para shorts:
+
+#### 🎨 **Estilo Visual**
+- **Fonte**: Anton (bold) - fonte local otimizada para legibilidade
+- **Cor**: Amarelo #E4EB34 (RGB 228 236 52) - alta visibilidade
+- **Contorno**: Preto sólido de 2px - contraste perfeito
+- **Texto**: Sempre em MAIÚSCULAS para impacto visual
+
+#### 📐 **Dimensionamento**
+- **Tamanho**: ~2.2% da altura do quadro (≈ 42–48px em 1080×1920)
+- **Escalabilidade**: Proporcional para outras resoluções
+- **Espaçamento**: Line-height 1, sem margens extras
+
+#### 🎯 **Posicionamento**
+- **Horizontal**: Centralizado automaticamente
+- **Vertical**: ~55% da altura do quadro (ligeiramente abaixo do centro)
+- **Responsivo**: Adapta-se a diferentes formatos de vídeo
+
+#### ⚡ **Funcionalidades**
+- **Sincronização**: Perfeita com áudio acelerado
+- **Segmentação**: Texto dividido em partes menores para melhor legibilidade
+- **Destaque**: Palavras-chave destacadas com variações do amarelo
+- **Animações**: Fade in/out suaves para transições naturais
 
 ### ⏱️ Configuração de Duração
 
