@@ -1,44 +1,71 @@
 {
     "pattern_video_configuration": {
         "tags": ["cortes", "fy", "foryou", "clipverso-ofc"],
-        "highlights": 1,
+        "highlights": 2,
         "append_outro": false,
         "content_speed": 1.25,
         "preserve_pitch": true,
-        "video_duration": 61,
-        "crop_mode": "fit"
+        "video_duration": 62,
+        "crop_mode": "fit",
+        "engagement_question": "Qual a sua opinião sobre isso?"
     },
     "video_configuration": [
         {
-            "input_url": "https://www.youtube.com/watch?v=sD-6M1yXnpg",
-            "pattern_video_configuration": true
+            "input_url": "https://www.youtube.com/watch?v=_J1ysEy44XA",
+            "highlights": 2,
+            "append_outro": false,
+            "content_speed": 1.25,
+            "preserve_pitch": true,
+            "video_duration": 62,
+            "crop_mode": "fit",
+            "engagement_question": "Qual a sua opinião sobre isso?"
         },
         {
-            "input_url": "https://www.youtube.com/watch?v=K_b80wPvEvc",
-            "pattern_video_configuration": true
+            "input_url": "https://www.youtube.com/watch?v=ElbKTtz5mHw",
+            "highlights": 4,
+            "append_outro": false,
+            "content_speed": 1.25,
+            "preserve_pitch": true,
+            "video_duration": 63,
+            "crop_mode": "fit",
+            "engagement_question": "Qual a sua opinião sobre isso?"
         },
         {
-            "input_url": "https://www.youtube.com/watch?v=RHINMS7s5mY",
-            "pattern_video_configuration": true
+            "input_url": "https://www.youtube.com/watch?v=LKvUHRoqs7o",
+            "highlights": 2,
+            "append_outro": false,
+            "content_speed": 1.25,
+            "preserve_pitch": true,
+            "video_duration": 61,
+            "crop_mode": "fit",
+            "engagement_question": "Qual a sua opinião sobre isso?"
         },
         {
-            "input_url": "https://www.youtube.com/watch?v=rt1I5XCDLso",
-            "pattern_video_configuration": true
+            "input_url": "https://www.youtube.com/watch?v=gQlXYwNgykg",
+            "highlights": 4,
+            "append_outro": false,
+            "content_speed": 1.25,
+            "preserve_pitch": true,
+            "video_duration": 61,
+            "crop_mode": "fit",
+            "engagement_question": "Qual a sua opinião sobre isso?"
         },
         {
-            "input_url": "https://www.youtube.com/watch?v=78eEs4gT3_Y",
-            "pattern_video_configuration": true
-        },
-        {
-            "input_url": "https://www.youtube.com/watch?v=u5_Bg-T7dX4",
-            "pattern_video_configuration": true
+            "input_url": "https://www.youtube.com/watch?v=KY0wktpoKps",
+            "highlights": 3,
+            "append_outro": false,
+            "content_speed": 1.25,
+            "preserve_pitch": true,
+            "video_duration": 61,
+            "crop_mode": "fit",
+            "engagement_question": "Qual a sua opinião sobre isso?"
         }
     ],
     "system_configuration": {
-        "upload_mode": false,
+        "upload_mode": true,
         "upload_delay": {
-            "min_seconds": 180,
-            "max_seconds": 360
+            "min_seconds": 1600,
+            "max_seconds": 5400
         },
         "video_optimization": {
             "use_gpu": true,

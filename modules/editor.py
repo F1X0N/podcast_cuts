@@ -295,6 +295,95 @@ def create_animated_text(text: str, duration: float, font_path: str, fontsize: i
     # Posiciona o clip
     return clip.set_position(position)
 
+def create_marquee_text(text: str, duration: float, fontsize: int, width: int, 
+                       position: tuple, speed: float = 50.0) -> mp.TextClip:
+    """
+    Cria um TextClip com efeito marquee (texto que se move horizontalmente).
+    
+    Args:
+        text: Texto a ser animado
+        duration: Duração total do clip
+        fontsize: Tamanho da fonte
+        width: Largura total disponível
+        position: Posição inicial (x, y)
+        speed: Velocidade de movimento em pixels por segundo
+    """
+    # Configura ImageMagick antes de criar o TextClip
+    import os
+    import moviepy.config as mpconfig
+    
+    # Define o caminho do ImageMagick
+    imagemagick_path = r"C:\Program Files\ImageMagick-7.1.1-Q16-HDRI\magick.exe"
+    os.environ["IMAGEMAGICK_BINARY"] = imagemagick_path
+    
+    # Tenta configurar via MoviePy config
+    try:
+        mpconfig.change_settings({"IMAGEMAGICK_BINARY": imagemagick_path})
+    except:
+        pass  # Se não funcionar, continua com a variável de ambiente
+    
+    # Converte texto para MAIÚSCULAS
+    text_upper = text.upper()
+    
+    # Cria o clip base com o texto
+    try:
+        clip = mp.TextClip(text_upper,
+            fontsize=fontsize,
+            font="Arial-Bold",
+            color="white",
+            stroke_color="black",
+            stroke_width=1,
+            method="label")  # Usa label para manter em uma linha
+    except Exception as e:
+        print(f"⚠️ Erro ao criar texto marquee: {e}")
+        # Fallback para configuração mais simples
+        clip = mp.TextClip(text_upper,
+            fontsize=fontsize,
+            color="white",
+            method="label")
+    
+    # Calcula a largura do texto para determinar o movimento
+    text_width = clip.w
+    
+    # Sempre repete o texto para criar um efeito de loop contínuo
+    # Isso garante que quando o texto sai pela esquerda, já começa a aparecer pela direita
+    repeated_text = f"{text_upper} • {text_upper} • {text_upper}"
+    try:
+        clip = mp.TextClip(repeated_text,
+            fontsize=fontsize,
+            font="Arial-Bold",
+            color="white",
+            stroke_color="black",
+            stroke_width=1,
+            method="label")  # Usa label para manter em uma linha
+    except Exception as e:
+        clip = mp.TextClip(repeated_text,
+            fontsize=fontsize,
+            color="white",
+            method="label")
+    text_width = clip.w
+    
+    # Define a duração total
+    clip = clip.set_duration(duration)
+    
+    # Calcula a distância total de movimento para loop contínuo
+    # O texto deve se mover da margem esquerda para a esquerda e reaparecer pela direita
+    total_distance = text_width + width
+    
+    # Função de animação para mover o texto com loop contínuo
+    def move_text(t):
+        # Calcula a posição X baseada no tempo
+        progress = (t * speed) % total_distance
+        # Começa na margem esquerda (position[0]) e move para a esquerda
+        # Quando sai pela esquerda, reaparece pela direita
+        x_pos = position[0] - progress
+        return (x_pos, position[1])
+    
+    # Aplica a animação de movimento
+    animated_clip = clip.set_position(move_text)
+    
+    return animated_clip
+
 def create_typing_effect(text: str, duration: float, font_path: str, fontsize: int, width: int,
                         position: tuple, typing_speed: float = 0.03) -> mp.TextClip:
     """
@@ -386,8 +475,15 @@ def highlight_keywords(text: str) -> str:
     
     return ' '.join(highlighted_words)
 
-def create_template_clip(width: int, height: int, duration: float, video_format: str = "horizontal", 
-                        video_position: tuple = None, video_size: tuple = None) -> mp.VideoClip:
+def create_template_clip(
+        width: int, 
+        height: int, 
+        duration: float, 
+        video_format: str = "horizontal", 
+        question: str = None,
+        video_position: tuple = None, 
+        video_size: tuple = None
+    ) -> mp.VideoClip:
     """
     Cria um template com header e footer baseado no molde fornecido.
     
@@ -430,8 +526,13 @@ def create_template_clip(width: int, height: int, duration: float, video_format:
         space_below = height - (video_y + video_h)
         
         # Header se posiciona muito próximo à borda superior do vídeo
-        header_height = max(int(space_above * 0.4), int(height * 0.06))  # Mínimo 6% da altura total
-        header_y = video_y - header_height - 5  # 5px acima da borda superior do vídeo
+        header_height = max(int(space_above * 0.4), int(height * 0.08))  # Mínimo 8% da altura total para acomodar pergunta
+        header_y = video_y - header_height - 10  # 10px acima da borda superior do vídeo para mais espaço
+        
+        # Garante que o header não fique fora dos limites da tela
+        if header_y < 0:
+            header_y = 0
+            header_height = min(header_height, video_y - 10)  # Ajusta altura se necessário
         
         # Footer se centraliza no espaço inferior
         footer_height = max(int(space_below * 0.7), int(height * 0.08))  # Mínimo 8% da altura total
@@ -465,6 +566,9 @@ def create_template_clip(width: int, height: int, duration: float, video_format:
     logo_size = int(header_height * 0.6)
     logo_x = int(width * 0.05)
     logo_y = header_y + header_height // 2
+    
+    # Garante que o logo não fique fora dos limites
+    logo_y = max(logo_size // 2, logo_y)
     
     # Cria logo circular com gradiente
     def make_logo_frame(t):
@@ -517,7 +621,35 @@ def create_template_clip(width: int, height: int, duration: float, video_format:
     subtitle_clip = subtitle_clip.set_position((title_x, subtitle_y))
     subtitle_clip = subtitle_clip.set_duration(duration)
     header_elements.append(subtitle_clip)
-    
+
+    # Adiciona pergunta de engajamento se fornecida
+    if question:
+        question_text = question
+        # Posiciona a pergunta mais próxima do subtítulo, garantindo que fique dentro do header
+        question_y = subtitle_y + int(header_height * 0.25)
+        
+        # Garante que a pergunta não ultrapasse a linha superior do vídeo
+        if question_y >= top_line_y - 10:  # 10px de margem de segurança
+            question_y = top_line_y - 15  # Posiciona 15px acima da linha superior
+        
+        # Garante que a coordenada Y seja válida (não negativa)
+        question_y = max(10, question_y)  # Mínimo 10px do topo
+        
+        # Cria o texto com efeito marquee
+        question_fontsize = int(header_height * 0.12)  # Reduzido de 0.15 para 0.12 para caber melhor
+        question_width = width - 40  # Margem de 20px de cada lado
+        
+        question_clip = create_marquee_text(
+            question_text,
+            duration,
+            question_fontsize,
+            question_width,
+            (10, question_y),  # Posição inicial (x=20 para margem esquerda)
+            speed=50.0  # Velocidade de movimento (pixels por segundo)
+        )
+        
+        header_elements.append(question_clip)
+
     # Linha superior do header (contorna o vídeo)
     line_clip = mp.ColorClip(size=(width, 2), color=[100, 150, 255], duration=duration)
     line_clip = line_clip.set_position((0, top_line_y))
@@ -538,8 +670,12 @@ def create_template_clip(width: int, height: int, duration: float, video_format:
     # Calcula tamanho da fonte proporcional ao espaço disponível
     # Garante que o texto caiba na largura disponível
     max_fontsize = min(int(footer_height * 0.4), int(width * 0.03))  # Máximo 4% da altura ou 3% da largura
-    footer_text_clip = mp.TextClip(footer_text, fontsize=max_fontsize, 
-                                  font="Arial-Bold", color="white")
+    footer_text_clip = mp.TextClip(
+        footer_text, 
+        fontsize=max_fontsize, 
+        font="Arial-Bold", 
+        color="white"
+    )
     footer_text_clip = footer_text_clip.set_position(("center", footer_text_y))
     footer_text_clip = footer_text_clip.set_duration(duration)
     footer_elements.append(footer_text_clip)
@@ -735,6 +871,9 @@ def make_clip(
             # Centraliza verticalmente na área disponível
             y_offset = (video_area_height - h) // 2
             video_y = header_height + y_offset
+            
+            # Garante que a posição Y seja válida
+            video_y = max(0, video_y)
             clip = clip.set_position((20, video_y))
         else:  # crop_mode == "center"
             # Redimensiona para caber toda a altura na área disponível
@@ -753,6 +892,9 @@ def make_clip(
             x_offset = (video_area_width - w) // 2
             y_offset = (video_area_height - h) // 2
             video_y = header_height + y_offset
+            
+            # Garante que a posição Y seja válida
+            video_y = max(0, video_y)
             clip = clip.set_position((20 + x_offset, video_y))
         
     elif original_aspect_ratio < 0.8:  # Vídeo vertical (9:16, 3:4, etc.)
@@ -776,6 +918,9 @@ def make_clip(
         # Centraliza horizontalmente na área disponível
         x_offset = (video_area_width - w) // 2
         video_y = header_height
+        
+        # Garante que a posição Y seja válida
+        video_y = max(0, video_y)
         clip = clip.set_position((20 + x_offset, video_y))
         
     else:  # Vídeo quadrado ou próximo do quadrado
@@ -796,6 +941,9 @@ def make_clip(
                 w, h = clip.size
             y_offset = (video_area_height - h) // 2
             video_y = header_height + y_offset
+            
+            # Garante que a posição Y seja válida
+            video_y = max(0, video_y)
             clip = clip.set_position((20, video_y))
         else:  # Ligeiramente vertical
             clip = clip.resize(height=video_area_height)
@@ -807,6 +955,9 @@ def make_clip(
                 w, h = clip.size
             x_offset = (video_area_width - w) // 2
             video_y = header_height
+            
+            # Garante que a posição Y seja válida
+            video_y = max(0, video_y)
             clip = clip.set_position((20 + x_offset, video_y))
     
     # Garante dimensões pares
@@ -898,8 +1049,15 @@ def make_clip(
     video_pos = (video_x, video_y)  # Usa as posições capturadas anteriormente
     video_sz = (final_w, final_h)  # Usa o tamanho final do vídeo
     
-    template = create_template_clip(final_width, final_height, clip.duration, video_format, 
-                                  video_position=video_pos, video_size=video_sz)
+    template = create_template_clip(
+        final_width, 
+        final_height, 
+        clip.duration, 
+        video_format, 
+        highlight.get('question'), 
+        video_position=video_pos, 
+        video_size=video_sz
+    )
     
     # Posiciona o vídeo com legendas na área central do template
     # O vídeo já está posicionado corretamente, então apenas combina com as legendas

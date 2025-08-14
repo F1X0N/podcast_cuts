@@ -21,6 +21,13 @@
             "request": "launch",
             "program": "${workspaceFolder}/upload_clips.py",
             "console": "integratedTerminal"
+        },
+        {
+            "name": "Facial Detection",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/modules/facial_detection.py",
+            "console": "integratedTerminal"
         }
     ]
 } 
